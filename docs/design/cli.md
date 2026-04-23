@@ -7,32 +7,30 @@
 ## 1. パッケージ構成
 
 ```
-cli/
+cmd/fumi/                         # package main — fumi バイナリのすべて
 ├── main.go                       # urfave/cli App の組み立て (§2)
-└── internal/
-    └── cmd/
-        ├── setup.go              # fumi setup        (cli.Command を return)
-        ├── uninstall.go          # fumi uninstall
-        ├── doctor.go             # fumi doctor
-        ├── actions.go            # fumi actions ...  (Subcommands を束ねる)
-        └── scripts.go            # fumi scripts ...  (list / run)
+├── setup.go                      # fumi setup        (*cli.Command を return)
+├── uninstall.go                  # fumi uninstall
+├── doctor.go                     # fumi doctor
+├── actions.go                    # fumi actions ...  (Subcommands を束ねる)
+├── scripts.go                    # fumi scripts ...  (list / run)
+├── manifest.go                   # Native Messaging manifest の組み立て・配置先解決
+└── constants.go                  # ldflags で注入される定数 (§3)
 
-internal/
-├── manifest/                     # Native Messaging manifest の組み立て・配置先解決
-│   ├── chrome.go                 # chrome: ~/Library/Application Support/Google/Chrome/NativeMessagingHosts/
-│   └── manifest.go               # JSON 生成 (allowed_origins は定数埋め込み)
-└── (store, config, runner, protocol は host と共有: host.md §1)
+internal/                         # host と共有するコードのみ
+└── (store, config, runner, protocol は host.md §1)
 ```
 
-- `cli/internal/cmd/` にはコマンド実装とユーザー向け表示ロジックのみ。ドメインロジックは `internal/` の共有パッケージに置く。
-- **CLI 専用の `internal/manifest/`** は `fumi setup` / `fumi uninstall` / `fumi doctor` で使用。Host 本体は manifest に関与しない。
+- `cmd/fumi/` 配下はすべて `package main`。コマンド実装とユーザー向け表示ロジックを同居させる。ドメインロジックは `internal/` の共有パッケージに置く。
+- **manifest 関連** (`fumi setup` / `fumi uninstall` / `fumi doctor` で使用) は host 本体が関与しないため、共有 `internal/` ではなく `cmd/fumi/manifest.go` に置く。将来 host 側でも manifest を扱う必要が出たら `internal/manifest/` に切り出す。
+- Command factory は `package main` 内の小文字スタート関数 (`setupCmd()` 等)。外部からの import も external test package もこの project では不要なため、`package main` 同居で十分。
 
 ## 2. コマンドディスパッチ (`urfave/cli/v2`)
 
 `urfave/cli/v2` の `App.Commands` + 入れ子の `Subcommands` で `fumi <resource> <verb>` 体系を表現する。flag パースとヘルプ生成はライブラリに任せる。
 
 ```go
-// cli/main.go
+// cmd/fumi/main.go
 package main
 
 import (
@@ -40,8 +38,6 @@ import (
     "os"
 
     "github.com/urfave/cli/v2"
-
-    "github.com/tkuramot/fumi/cli/internal/cmd"
 )
 
 func main() {
@@ -49,11 +45,11 @@ func main() {
         Name:  "fumi",
         Usage: "ブラウザ × ホストマシン連携ユーティリティ",
         Commands: []*cli.Command{
-            cmd.Setup(),
-            cmd.Uninstall(),
-            cmd.Doctor(),
-            cmd.Actions(),    // fumi actions list
-            cmd.Scripts(),    // fumi scripts list | run
+            setupCmd(),
+            uninstallCmd(),
+            doctorCmd(),
+            actionsCmd(),    // fumi actions list
+            scriptsCmd(),    // fumi scripts list | run
         },
     }
     if err := app.RunContext(context.Background(), os.Args); err != nil {
@@ -62,11 +58,13 @@ func main() {
 }
 ```
 
-各コマンドファイルは `*cli.Command` を返す factory 関数として実装する:
+各コマンドファイルは `*cli.Command` を返す factory 関数として実装する (同 package なので小文字スタート):
 
 ```go
-// cli/internal/cmd/scripts.go
-func Scripts() *cli.Command {
+// cmd/fumi/scripts.go
+package main
+
+func scriptsCmd() *cli.Command {
     return &cli.Command{
         Name:  "scripts",
         Usage: "External Script の一覧・実行",
@@ -102,27 +100,27 @@ func Scripts() *cli.Command {
 spec §11.2 より、`allowed_origins` に入れる 2 つの Extension ID は `fumi` バイナリに埋め込む:
 
 ```go
-// cli/internal/cmd/constants.go
-package cmd
+// cmd/fumi/constants.go
+package main
 
 // リリースビルド時に -ldflags で上書きされる。開発中はダミー値。
 var (
-    WebStoreExtensionID  = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    UnpackedExtensionID  = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-    HostBinaryPath       = "/opt/homebrew/bin/fumi-host"
+    webStoreExtensionID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    unpackedExtensionID = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    hostBinaryPath      = "/opt/homebrew/bin/fumi-host"
 )
 ```
 
-ビルド時:
+ビルド時 (ldflags は `package main` の変数を `main.<name>` で指定する):
 ```bash
 go build -ldflags "
-  -X github.com/tkuramot/fumi/cli/internal/cmd.WebStoreExtensionID=$WS_ID
-  -X github.com/tkuramot/fumi/cli/internal/cmd.UnpackedExtensionID=$UP_ID
-  -X github.com/tkuramot/fumi/cli/internal/cmd.HostBinaryPath=$BIN_PATH
-" ./cli
+  -X main.webStoreExtensionID=$WS_ID
+  -X main.unpackedExtensionID=$UP_ID
+  -X main.hostBinaryPath=$BIN_PATH
+" ./cmd/fumi
 ```
 
-Homebrew formula 側で `brew --prefix` から `HostBinaryPath` を注入する。
+Homebrew formula 側で `brew --prefix` から `hostBinaryPath` を注入する。
 
 ## 4. サブコマンド詳細
 
@@ -243,7 +241,7 @@ summary: hello
 
 ## 7. テスト戦略
 
-- `cli/internal/cmd/*` の各 factory が返す `*cli.Command` を、テストでは専用の小さな `cli.App` に包んで `app.Run([]string{"fumi", "scripts", "list"})` のように呼ぶ。`App.Writer` / `App.ErrWriter` を `*bytes.Buffer` に差し替えて stdout/stderr を検査。
+- `cmd/fumi/*` の各 factory が返す `*cli.Command` を、テストでは専用の小さな `cli.App` に包んで `app.Run([]string{"fumi", "scripts", "list"})` のように呼ぶ。テストファイルは `cmd/fumi/*_test.go` (`package main`) に置く。`App.Writer` / `App.ErrWriter` を `*bytes.Buffer` に差し替えて stdout/stderr を検査。
 - `fumi setup` / `fumi uninstall` は tempdir をストアルート / manifest 配置先に `--store-root` / `--manifest-dir` フラグで差し替えられるようにしておく (テストフック)。
 - `fumi scripts run` は内部で `internal/runner` を叩くのでそこの integration test と合流。
 
