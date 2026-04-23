@@ -1,4 +1,4 @@
-// Action sync domain file. Orchestrates host call + user-script replacement
+// Action sync domain file. Orchestrates host call + userscript replacement
 // + status write. Promoted from the router per §1.1 because it exceeds the
 // "thin passthrough" threshold.
 
@@ -9,11 +9,11 @@ import * as us from "./chrome/userScripts.js";
 
 let preludeCache: string | null = null;
 
-// Fetch prelude.js from the extension bundle. The user-script prelude is a
+// Fetch prelude.js from the extension bundle. The userscript prelude is a
 // self-contained file; chrome.runtime.getURL + fetch works from the SW.
 async function getPrelude(): Promise<string> {
 	if (preludeCache !== null) return preludeCache;
-	const res = await fetch(chrome.runtime.getURL("user-script/prelude.js"));
+	const res = await fetch(chrome.runtime.getURL("userscript/prelude.js"));
 	preludeCache = await res.text();
 	return preludeCache;
 }

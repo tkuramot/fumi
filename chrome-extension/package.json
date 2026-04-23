@@ -5,7 +5,7 @@
 	"type": "module",
 	"description": "Bridge browser JS and host-side scripts via Native Messaging.",
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json && cp -R public/. dist/ && node -e \"const f='dist/user-script/prelude.js';require('fs').writeFileSync(f,require('fs').readFileSync(f,'utf8').replace(/^export \\{\\};\\s*$/m,''));\"",
+		"build": "tsc -p tsconfig.build.json && cp -R public/. dist/ && node -e \"const f='dist/userscript/prelude.js';require('fs').writeFileSync(f,require('fs').readFileSync(f,'utf8').replace(/^export \\{\\};\\s*$/m,''));\"",
 		"watch": "tsc -p tsconfig.build.json -w",
 		"test": "tsc -p tsconfig.json && node --test 'dist/**/*.test.js'",
 		"typecheck": "tsc --noEmit",

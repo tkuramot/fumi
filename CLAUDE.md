@@ -38,12 +38,12 @@ Release builds override identity constants via ldflags (see `cmd/fumi/constants.
 ### Process model
 
 ```
-web page  ⇄  user-script (chrome.userScripts)  ⇄  background SW  ⇄  fumi-host  ⇄  child script
+web page  ⇄  userscript (chrome.userScripts)  ⇄  background SW  ⇄  fumi-host  ⇄  child script
 ```
 
 - `fumi-host` is **short-lived**: Chrome spawns one process per request; it reads a single Native Messaging frame from stdin, dispatches, writes one reply, exits. See `cmd/fumi-host/main.go` and `dispatch.go`. Do not add long-running state to the host.
-- The extension service worker owns all `chrome.*` APIs and routes user-script → host messages. Entry at `chrome-extension/src/background/index.ts`; Chrome-facing adapters under `background/chrome/`.
-- The user-script prelude (`src/user-script/prelude.ts`) injects the `fumi.run` API into matched pages.
+- The extension service worker owns all `chrome.*` APIs and routes userscript → host messages. Entry at `chrome-extension/src/background/index.ts`; Chrome-facing adapters under `background/chrome/`.
+- The userscript prelude (`src/userscript/prelude.ts`) injects the `fumi.run` API into matched pages.
 
 ### Wire protocol
 

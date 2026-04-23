@@ -13,7 +13,7 @@ import (
 func actionsCmd() *cli.Command {
 	return &cli.Command{
 		Name:  "actions",
-		Usage: "Manage user-script actions",
+		Usage: "Manage userscript actions",
 		Subcommands: []*cli.Command{
 			{
 				Name:   "list",
