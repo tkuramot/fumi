@@ -197,7 +197,7 @@ async function routeUserScriptMessage(
 Host とは **JSON-RPC 2.0** で通信する (詳細は design/protocol.md)。
 
 ```ts
-export const HOST_NAME = "com.tkuramot.fumi";   // manifest の name と一致
+export const HOST_NAME = "com.tkrmt.fumi";   // manifest の name と一致
 
 type Method = Request["method"];
 type ParamsOf<M extends Method> = Extract<Request, { method: M }>["params"];

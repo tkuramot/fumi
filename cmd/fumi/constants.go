@@ -8,4 +8,4 @@ var (
 	hostBinaryPath      = "/opt/homebrew/bin/fumi-host"
 )
 
-const nativeMessagingHostName = "com.tkuramot.fumi"
+const nativeMessagingHostName = "com.tkrmt.fumi"
