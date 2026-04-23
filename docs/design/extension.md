@@ -19,7 +19,7 @@ extension/
     │   └── chrome/             # 1 ファイル = 1 chrome.* 名前空間スライス
     │       ├── nativeMessaging.ts  # chrome.runtime.sendNativeMessage の Promise/型付け
     │       ├── userScripts.ts      # chrome.userScripts.{register,unregister,getScripts}
-    │       └── contextMenus.ts     # chrome.contextMenus.{create,remove} + 冪等 register ヘルパ
+    │       └── contextMenus.ts     # chrome.contextMenus.{create,remove}
     ├── popup/
     │   └── popup.ts
     ├── user-script/
@@ -64,11 +64,11 @@ action            → fumi.tabs.update(...)                (prelude)
 
 #### `chrome/` の中身ルール
 
-- 内容は Promise 化 / 型付け / chrome 操作パターン (冪等 register、batch unregister→register 等) まで。
+- 内容は Promise 化 / 型付け / chrome 操作パターン (batch unregister→register 等) まで。冪等化のような fumi セマンティクスはここに入れない (§4.3 命名規則 7)。
 - **fumi 固有の defaults** (`contexts: ["page"]` 等) や **ドメイン状態** (アクション ID、JSON-RPC エンベロープ) は持ち込まない。これらはルータ/ハンドラ側で埋める。
 - 命名は扱う chrome.* スライスを表す名 (`nativeMessaging.ts` など)。`runtime.ts` のような名前空間全体名は、全体をラップする錯覚を生むので使わない。
 - `chrome/` は 2 系統が混在するが扱いは同じ:
-  - `fumi.*` の裏側: `nativeMessaging.ts` (← `fumi.run`)、`contextMenus.ts` (← `fumi.contextMenus.register`)。spec §5.1.4 で増えていく
+  - `fumi.*` の裏側: `nativeMessaging.ts` (← `fumi.run`)、`contextMenus.ts` (← `fumi.contextMenus.create`)。spec §5.1.4 で増えていく
   - 内部インフラ: `userScripts.ts` (action 自体の登録機構。`fumi.userScripts.*` は提供しない)
 
 #### 新しい chrome.* 名前空間を扱うとき
@@ -391,7 +391,7 @@ Service Worker の `chrome.userScripts.register` で各アクションの `code`
 - `fumi.run` の戻り値型は `Promise<RunResult>`。**TypeScript 型定義** は `@types/fumi` 相当を `samples/` 側で提供 (オプション)。ユーザーは JS でアクションを書くので型必須ではない。
 - `contexts` の既定は `["page"]` (最頻ケース)。
 - `onClicked` の引数は `chrome.contextMenus.onClicked` と同じ `(info, tab)` を SW 側ディスパッチャが `chrome.tabs.sendMessage` に載せて届ける。
-- MV3 SW が停止してから再起動するケースで `ctxHandlers` は空になるが、User Script 側のクロージャに紐づいているので、**そのタブで再び `fumi.contextMenus.register` が呼ばれるまでは dispatch が空振り** する。これは spec §4.1 の「タブを再読込すれば復活」で許容。
+- MV3 SW が停止してから再起動するケースで `ctxHandlers` は空になるが、User Script 側のクロージャに紐づいているので、**そのタブで再び `fumi.contextMenus.create` が呼ばれるまでは dispatch が空振り** する。これは spec §4.1 の「タブを再読込すれば復活」で許容。
 
 ## 5. Popup (`src/popup/`)
 

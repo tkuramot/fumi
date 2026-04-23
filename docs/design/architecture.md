@@ -150,11 +150,11 @@ User Script           Service Worker           fumi-host             External Sc
     │           │─chrome.userScripts │                              │
     │           │  .execute()        │                              │
     │           │                    │                              │
-    │           │                    │ fumi.contextMenus.register({id,title,onClicked})
+    │           │                    │ fumi.contextMenus.create({id,title,onClicked})
     │           │◀─ sendMessage ──── │                              │
     │           │  {kind:"contextMenu│                              │
-    │           │   s/register",...} │                              │
-    │           │─chrome.contextMenus.create/update (id冪等)        │
+    │           │   s/create",...}   │                              │
+    │           │─chrome.contextMenus.create (重複 id はそのままエラー)│
     │           │                                                   │
     │           │                                                   │
     │           │ onClicked(info, tab)                              │
@@ -163,7 +163,7 @@ User Script           Service Worker           fumi-host             External Sc
     │           │   ", menuId,info,tab}) ──▶ User Script で onClicked 実行│
 ```
 
-- SW 側は `Map<menuId, { tabId, registeredAt }>` を保持し、同 id の再登録で上書き (spec §5.1.4 冪等性)。
+- SW 側は冪等化しない (spec §5.1.4: chrome.* セマンティクス完全一致)。重複登録を避けたい action は `remove` → `create` イディオムを使う。dispatch 先は `onClicked` の `tab` 引数から直接得るため registry Map は持たない。
 - dispatch 先は `onClicked` の第 2 引数 `tab` そのまま。User Script ↔ SW は `chrome.tabs.sendMessage` (frameId 省略 = top frame)。
 
 ## 4. プロセスライフサイクル
@@ -177,7 +177,7 @@ User Script           Service Worker           fumi-host             External Sc
 
 **設計上の帰結**:
 - SW が消えても Action 登録は `chrome.userScripts` 側に永続化されている (MV3 仕様) ため、再起動時の `actions/list` は必須ではない。ただし **起動直後に 1 回は走らせる** (ストアが編集されている可能性があるため)。
-- `chrome.contextMenus` は MV3 では Service Worker 再起動時に **自動では復元されない** ので、SW 起動時に対象タブの User Script が再度 `fumi.contextMenus.register` を呼ぶ必要がある。ユーザーには「タブをリロードすれば復活」とドキュメントで告知する。
+- `chrome.contextMenus` は MV3 では Service Worker 再起動時に **自動では復元されない** ので、SW 起動時に対象タブの User Script が再度 `fumi.contextMenus.create` を呼ぶ必要がある。ユーザーには「タブをリロードすれば復活」とドキュメントで告知する。
 
 ## 5. エラーハンドリングの階層
 
