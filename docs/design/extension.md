@@ -16,7 +16,7 @@ extension/
 │   ├── background/
 │   │   ├── index.ts            # Service Worker エントリ
 │   │   ├── native.ts           # chrome.runtime.sendNativeMessage ラッパ
-│   │   ├── actions.ts          # getActions → chrome.userScripts.register の同期
+│   │   ├── actions.ts          # actions/list → chrome.userScripts.register の同期
 │   │   └── contextMenus.ts     # fumi.contextMenus.register の Service Worker 側ディスパッチャ
 │   ├── popup/
 │   │   └── popup.ts
@@ -95,7 +95,8 @@ chrome.runtime.onInstalled.addListener(() => syncActions());
 chrome.runtime.onStartup.addListener(() => syncActions());
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  // User Script からの op:"runScript" / "contextMenus.register" を受ける
+  // User Script からの kind:"scripts/run" / "contextMenus/register" を受ける
+  // (SW ↔ User Script の内部プロトコル。Host 向け JSON-RPC とは別層)
   handleUserScriptMessage(msg, sender).then(sendResponse);
   return true;  // async response
 });
@@ -107,22 +108,27 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 ### 3.2. Native Messaging ラッパ (`native.ts`)
 
+Host とは **JSON-RPC 2.0** で通信する (詳細は design/protocol.md)。
+
 ```ts
 export const HOST_NAME = "com.tkuramot.fumi";   // manifest の name と一致
 
+type Method = Request["method"];
+type ParamsOf<M extends Method> = Extract<Request, { method: M }>["params"];
+
 export async function call<R>(
-  op: Request["op"],
-  params: object
+  method: Method,
+  params?: ParamsOf<Method>
 ): Promise<R> {
-  const req = { id: crypto.randomUUID(), op, params };
+  const req = { jsonrpc: "2.0" as const, id: crypto.randomUUID(), method, params };
   return new Promise((resolve, reject) => {
     chrome.runtime.sendNativeMessage(HOST_NAME, req, (res) => {
       if (chrome.runtime.lastError) {
         reject(hostUnreachable(chrome.runtime.lastError.message));
         return;
       }
-      if (!res.ok) {
-        reject(new FumiHostError(res.error));
+      if ("error" in res) {
+        reject(new FumiHostError(res.error));  // error.data.fumiCode で UI 分岐
         return;
       }
       resolve(res.result as R);
@@ -131,14 +137,16 @@ export async function call<R>(
 }
 ```
 
+- `result` / `error` の判別は `"error" in res` で行う (JSON-RPC 2.0 の相互排他)。
 - 失敗はすべて `throw` で上流に伝播。呼び出し側で `chrome.storage.session` に最終エラーを書いて Popup に見せる。
+- `HOST_UNREACHABLE` は Extension 内部ローカルのエラー分類 (ワイヤには流れない)。
 
 ### 3.3. アクション同期 (`actions.ts`)
 
 ```ts
 export async function syncActions() {
   try {
-    const { actions } = await call<{ actions: Action[] }>("getActions", {});
+    const { actions } = await call<{ actions: Action[] }>("actions/list");
     await replaceRegisteredScripts(actions);
     await setStatus({ ok: true, count: actions.length, at: Date.now() });
   } catch (e) {
@@ -185,7 +193,7 @@ async function replaceRegisteredScripts(actions: Action[]) {
 
 ### 3.4. ContextMenu ディスパッチャ (`contextMenus.ts`)
 
-`fumi.contextMenus.register`(User Script から `op: "contextMenus.register"` で送られる)を受け取り、`chrome.contextMenus.create` と `chrome.contextMenus.onClicked` のバインドを担う。SW 側は chrome API を呼ぶだけで、ハンドラ本体は User Script クロージャに残る。
+`fumi.contextMenus.register`(User Script から `kind: "contextMenus.register"` で SW に送られる)を受け取り、`chrome.contextMenus.create` と `chrome.contextMenus.onClicked` のバインドを担う。SW 側は chrome API を呼ぶだけで、ハンドラ本体は User Script クロージャに残る。
 
 ```ts
 type Registration = { actionId: string; tabId: number };
@@ -243,11 +251,13 @@ Service Worker の `chrome.userScripts.register` で各アクションの `code`
 ```ts
 // prelude.ts (IIFE 化してバンドル)
 (() => {
-  const send = <R>(op: string, params: unknown): Promise<R> =>
+  // SW ↔ User Script の内部メッセージ (Host 向け JSON-RPC とは別層)。
+  // SW 側で JSON-RPC に変換して Host に転送する。
+  const send = <R>(kind: string, params: unknown): Promise<R> =>
     new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({ op, params }, (res) => {
+      chrome.runtime.sendMessage({ kind, params }, (res) => {
         if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
-        if (!res?.ok) { reject(new Error(res?.error?.code ?? "UNKNOWN")); return; }
+        if (res?.error) { reject(new Error(res.error.data?.fumiCode ?? res.error.message ?? "UNKNOWN")); return; }
         resolve(res.result as R);
       });
     });
@@ -264,7 +274,7 @@ Service Worker の `chrome.userScripts.register` で各アクションの `code`
 
   (globalThis as any).fumi = {
     run: (scriptPath: string, payload: unknown, opts?: { timeoutMs?: number }) =>
-      send("runScript", { scriptPath, payload, ...(opts ?? {}) }),
+      send("scripts/run", { scriptPath, payload, ...(opts ?? {}) }),   // SW が JSON-RPC に包んで Host へ
 
     contextMenus: {
       register: (opts: {
@@ -274,7 +284,7 @@ Service Worker の `chrome.userScripts.register` で各アクションの `code`
         onClicked: CtxHandler;
       }) => {
         ctxHandlers.set(opts.id, opts.onClicked);
-        return send("contextMenus.register", {
+        return send("contextMenus/register", {
           id: opts.id,
           title: opts.title,
           contexts: opts.contexts ?? ["page"],

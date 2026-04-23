@@ -8,8 +8,8 @@
 cmd/fumi-host/                        # package main — fumi-host バイナリのすべて
 ├── main.go                           # エントリ (短い, run() 呼び出しのみ)
 ├── dispatch.go                       # op → handler ルーティング
-├── get_actions.go                    # getActions ハンドラ
-└── run_script.go                     # runScript ハンドラ
+├── actions_list.go                   # actions/list ハンドラ
+└── scripts_run.go                    # scripts/run ハンドラ
 
 internal/                             # fumi と共有するコードのみ
 ├── protocol/
@@ -197,20 +197,22 @@ func LoadAll(p *Paths) ([]protocol.Action, error) {
 
 spec §5.2.5 / §9.2 を実装する。
 
+`errBody(fumiCode, msg)` は `internal/protocol` のヘルパーで、`fumiCode` 文字列 (例: `"SCRIPT_NOT_FOUND"`) から JSON-RPC 用の数値 `code` を引いて `*protocol.RpcError{Code, Message, Data: {"fumiCode": fumiCode}}` を組み立てる (protocol.md §3 のマッピング表)。
+
 ```go
 type ResolvedScript struct {
     AbsPath string   // realpath 後の絶対パス
     Cwd     string   // スクリプトのディレクトリ
 }
 
-func ResolveScript(p *Paths, rel string) (*ResolvedScript, *protocol.ErrorBody) {
+func ResolveScript(p *Paths, rel string) (*ResolvedScript, *protocol.RpcError) {
     // 1. 絶対パス / .. / 空文字を拒否
     if rel == "" || filepath.IsAbs(rel) {
-        return nil, errBody("INVALID_SCRIPT_PATH", "must be relative")
+        return nil, errBody("SCRIPT_INVALID_PATH", "must be relative")
     }
     cleaned := filepath.Clean(rel)
     if strings.HasPrefix(cleaned, "..") || strings.Contains(cleaned, "/../") {
-        return nil, errBody("INVALID_SCRIPT_PATH", "parent traversal not allowed")
+        return nil, errBody("SCRIPT_INVALID_PATH", "parent traversal not allowed")
     }
 
     candidate := filepath.Join(p.Scripts, cleaned)
@@ -234,7 +236,7 @@ func ResolveScript(p *Paths, rel string) (*ResolvedScript, *protocol.ErrorBody) 
     scriptsRoot, err := filepath.EvalSymlinks(p.Scripts)
     if err != nil { return nil, errBody("STORE_NOT_FOUND", err.Error()) }
     if !isWithin(resolved, scriptsRoot) {
-        return nil, errBody("INVALID_SCRIPT_PATH", "resolved outside scripts/")
+        return nil, errBody("SCRIPT_INVALID_PATH", "resolved outside scripts/")
     }
 
     // 4. 実行権限
@@ -283,7 +285,7 @@ type RunOutcome struct {
     DurationMs int64
 }
 
-func Run(ctx context.Context, p *RunParams) (*RunOutcome, *protocol.ErrorBody) {
+func Run(ctx context.Context, p *RunParams) (*RunOutcome, *protocol.RpcError) {
     runCtx, cancel := context.WithTimeout(ctx, p.Timeout)
     defer cancel()
 
@@ -292,16 +294,16 @@ func Run(ctx context.Context, p *RunParams) (*RunOutcome, *protocol.ErrorBody) {
     cmd.Env = buildEnv(p.StoreRoot, p.ExtraEnv)          // os.Environ() + 追加
 
     stdin, err := cmd.StdinPipe()
-    if err != nil { return nil, errBody("SPAWN_FAILED", err.Error()) }
+    if err != nil { return nil, errBody("EXEC_SPAWN_FAILED", err.Error()) }
 
-    stdout := &cappedBuffer{limit: 1024 * 1024}
-    stderr := &cappedBuffer{limit: 1024 * 1024}
+    stdout := &cappedBuffer{limit: 768 * 1024}   // protocol.md §4.2 参照
+    stderr := &cappedBuffer{limit: 128 * 1024}
     cmd.Stdout = stdout
     cmd.Stderr = stderr
 
     start := time.Now()
     if err := cmd.Start(); err != nil {
-        return nil, errBody("SPAWN_FAILED", err.Error())
+        return nil, errBody("EXEC_SPAWN_FAILED", err.Error())
     }
 
     // stdin への書き込みはゴルーチンで (payload が 1 MiB 近くでパイプが詰まる可能性)
@@ -316,13 +318,13 @@ func Run(ctx context.Context, p *RunParams) (*RunOutcome, *protocol.ErrorBody) {
     duration := time.Since(start).Milliseconds()
 
     if stdout.Overflowed() || stderr.Overflowed() {
-        return nil, errBody("OUTPUT_TOO_LARGE", "stdout or stderr exceeded 1 MiB")
+        return nil, errBody("EXEC_OUTPUT_TOO_LARGE", "stdout/stderr exceeded limit")
     }
 
     if ctx.Err() == context.DeadlineExceeded || runCtx.Err() == context.DeadlineExceeded {
         // CommandContext は既に SIGKILL を送っているが、SIGTERM→SIGKILL の段階化は
         // 手動で cmd.Process.Signal(syscall.SIGTERM) → 数百ms → cmd.Process.Kill() を行う
-        return nil, errBody("TIMEOUT", "script timed out")
+        return nil, errBody("EXEC_TIMEOUT", "script timed out")
     }
 
     exitCode := 0
@@ -384,7 +386,7 @@ func (b *cappedBuffer) Overflowed() bool { return b.over }
 func (b *cappedBuffer) Bytes() []byte    { return b.buf.Bytes() }
 ```
 
-溢れた時点で `over` を立て、以降の書き込みは drop。最後に `Overflowed()` をチェックして `OUTPUT_TOO_LARGE` にマップ。部分出力は破棄して error のみ返す (spec §5.2.5: truncate しない方針)。
+溢れた時点で `over` を立て、以降の書き込みは drop。最後に `Overflowed()` をチェックして `EXEC_OUTPUT_TOO_LARGE` (code -33031) にマップ。部分出力は破棄して error のみ返す (spec §5.2.5: truncate しない方針)。
 
 ## 10. `cmd/fumi-host/dispatch.go`
 
@@ -394,30 +396,37 @@ package main
 func run(stdin io.Reader, stdout, stderr io.Writer) int {
     req, err := readRequest(stdin)
     if err != nil {
-        fmt.Fprintln(stderr, "fumi-host: read error:", err)
-        return 1
+        // Parse error は id 不明として id=null で返す (JSON-RPC 2.0 §4.2)
+        writeError(stdout, nil, protocol.CodeParseError, "PROTO_PARSE_ERROR", err.Error(), nil)
+        return 0
+    }
+    if req.JsonRpc != "2.0" {
+        writeError(stdout, req.ID, protocol.CodeInvalidRequest, "PROTO_INVALID_REQUEST",
+            "jsonrpc must be \"2.0\"", nil)
+        return 0
     }
 
     cfg, _ := config.Load()
     paths, perr := store.Resolve(cfg)
     if perr != nil {
-        writeError(stdout, req.ID, "INTERNAL", perr.Error())
+        writeError(stdout, req.ID, protocol.CodeInternal, "INTERNAL", perr.Error(), nil)
         return 0
     }
 
     var result any
-    var errBody *protocol.ErrorBody
-    switch req.Op {
-    case "getActions":
-        result, errBody = handleGetActions(paths)
-    case "runScript":
-        result, errBody = handleRunScript(context.Background(), cfg, paths, req.Params)
+    var rpcErr *protocol.RpcError
+    switch req.Method {
+    case "actions/list":
+        result, rpcErr = handleActionsList(paths)
+    case "scripts/run":
+        result, rpcErr = handleScriptsRun(context.Background(), cfg, paths, req.Params)
     default:
-        errBody = &protocol.ErrorBody{Code: "UNKNOWN_OP", Message: req.Op}
+        rpcErr = protocol.NewError(protocol.CodeMethodNotFound, "PROTO_METHOD_NOT_FOUND",
+            "unknown method: "+req.Method, map[string]any{"method": req.Method})
     }
 
-    if errBody != nil {
-        writeError(stdout, req.ID, errBody.Code, errBody.Message)
+    if rpcErr != nil {
+        writeErrorObj(stdout, req.ID, rpcErr)
     } else {
         writeOK(stdout, req.ID, result)
     }
@@ -426,7 +435,8 @@ func run(stdin io.Reader, stdout, stderr io.Writer) int {
 ```
 
 - **1 リクエスト処理して main に return**。`for { ReadMessage }` ループは作らない (短命方針)。
-- 未捕捉パニックは `recover` で `INTERNAL` エラーに変換。
+- 未捕捉パニックは `recover` で `INTERNAL` (code -32603) に変換。
+- コード定数は `internal/protocol` に集約 (`CodeParseError = -32700` 等)。
 
 ## 11. テスト戦略
 

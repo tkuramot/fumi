@@ -191,7 +191,7 @@ All checks passed.
 
 ### 4.4. `fumi actions list`
 
-`internal/store.LoadAll` をそのまま呼び、id / path / matches を表形式で表示。エラー時は該当ファイルだけ `[ERR]` 表示、他は通常表示 (Host の `getActions` と違い、CLI は部分表示してデバッグを助ける)。
+`internal/store.LoadAll` をそのまま呼び、id / path / matches を表形式で表示。エラー時は該当ファイルだけ `[ERR]` 表示、他は通常表示 (Host の `actions/list` と違い、CLI は部分表示してデバッグを助ける)。
 
 ```
 $ fumi actions list

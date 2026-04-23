@@ -21,13 +21,13 @@ fumi/
 │   └── fumi-host/               # fumi-host バイナリ (package main) — dispatch 同居
 │       ├── main.go              # stdin/stdout ロック + run() 呼び出し
 │       ├── dispatch.go          # op → handler ルーティング
-│       ├── get_actions.go       # getActions ハンドラ
-│       └── run_script.go        # runScript ハンドラ
+│       ├── actions_list.go     # actions/list ハンドラ
+│       └── scripts_run.go      # scripts/run ハンドラ
 ├── internal/                    # 両バイナリで共有する Go コード
 │   ├── config/                  # ~/.config/fumi/config.toml ローダ
 │   ├── store/                   # ストアパス解決・frontmatter parser・セキュリティ検証
 │   ├── protocol/                # Native Messaging 4B LE + JSON エンコーダ/デコーダ
-│   └── runner/                  # runScript のコアロジック (host と `fumi scripts run` で共有)
+│   └── runner/                  # scripts/run のコアロジック (host と `fumi scripts run` で共有)
 ├── extension/
 │   ├── package.json             # dev deps: typescript, @types/chrome のみ
 │   ├── tsconfig.json
@@ -97,7 +97,9 @@ Chrome起動  SW(Background)         fumi-host           ストア
    │            │                    │                   │
    │─startup───▶│                    │                   │
    │            │─sendNativeMessage──│                   │
-   │            │  {op:"getActions"} │                   │
+   │            │  {jsonrpc:"2.0",   │                   │
+   │            │   method:          │                   │
+   │            │    "actions/list"} │                   │
    │            │                    │─actions/ 列挙────▶│
    │            │                    │◀─.js files─────── │
    │            │                    │─frontmatter parse │
@@ -109,10 +111,10 @@ Chrome起動  SW(Background)         fumi-host           ストア
 ```
 
 - `preludeJs` は Extension にバンドルされる固定の `fumi.*` 実装 (Service Worker への `sendMessage` ラッパ)。
-- `userJs` は `code` フィールドとして、`getActions` レスポンスのまま挿入。
+- `userJs` は `code` フィールドとして、`actions/list` レスポンスのまま挿入。
 - 既存登録との差分は **常に全置換** する (`unregister` → `register`)。最小差分更新は実装しない (ユーザー数規模で問題にならない)。
 
-### 3.2. runScript 呼び出し
+### 3.2. scripts/run 呼び出し
 
 ```
 User Script           Service Worker           fumi-host             External Script
@@ -120,10 +122,14 @@ User Script           Service Worker           fumi-host             External Sc
     │  fumi.run("x.sh", p)  │                     │                         │
     │─chrome.runtime.send──▶│                     │                         │
     │  Message({            │                     │                         │
-    │    op:"runScript",    │                     │                         │
+    │    kind:"scripts/run",│                     │                         │
     │    scriptPath, payload│                     │                         │
     │  })                   │                     │                         │
-    │                       │─sendNativeMessage──▶│                         │
+    │                       │─JSON-RPC 2.0 で─────▶│                         │
+    │                       │  sendNativeMessage   │                         │
+    │                       │  {jsonrpc:"2.0",     │                         │
+    │                       │   method:"scripts/run│                         │
+    │                       │   params:{...}}      │                         │
     │                       │                     │─path 検証 (realpath+lstat)
     │                       │                     │─exec.Command(no shell)─▶│
     │                       │                     │─stdin: JSON, close      │
@@ -146,8 +152,8 @@ User Script           Service Worker           fumi-host             External Sc
     │           │                    │                              │
     │           │                    │ fumi.contextMenus.register({id,title,onClicked})
     │           │◀─ sendMessage ──── │                              │
-    │           │  {op:"contextMenus │                              │
-    │           │   .register",id,..}│                              │
+    │           │  {kind:"contextMenu│                              │
+    │           │   s/register",...} │                              │
     │           │─chrome.contextMenus.create/update (id冪等)        │
     │           │                                                   │
     │           │                                                   │
@@ -167,10 +173,10 @@ User Script           Service Worker           fumi-host             External Sc
 | Service Worker | Extension 有効化 / メッセージ着信 | Chrome のアイドル判定 | `chrome.storage` キャッシュ以外は揮発 |
 | User Script | match するページのロード | タブ遷移 / ページ閉 | クロージャのみ、永続なし |
 | fumi-host | `sendNativeMessage` ごと | 応答 1 回送信後 exit | ディスクから毎回読み直す |
-| External Script | `runScript` 操作ごと | 自前 exit / timeout → SIGTERM+KILL | 呼び出しごとに独立 |
+| External Script | `scripts/run` 操作ごと | 自前 exit / timeout → SIGTERM+KILL | 呼び出しごとに独立 |
 
 **設計上の帰結**:
-- SW が消えても Action 登録は `chrome.userScripts` 側に永続化されている (MV3 仕様) ため、再起動時の `getActions` は必須ではない。ただし **起動直後に 1 回は走らせる** (ストアが編集されている可能性があるため)。
+- SW が消えても Action 登録は `chrome.userScripts` 側に永続化されている (MV3 仕様) ため、再起動時の `actions/list` は必須ではない。ただし **起動直後に 1 回は走らせる** (ストアが編集されている可能性があるため)。
 - `chrome.contextMenus` は MV3 では Service Worker 再起動時に **自動では復元されない** ので、SW 起動時に対象タブの User Script が再度 `fumi.contextMenus.register` を呼ぶ必要がある。ユーザーには「タブをリロードすれば復活」とドキュメントで告知する。
 
 ## 5. エラーハンドリングの階層
@@ -178,10 +184,10 @@ User Script           Service Worker           fumi-host             External Sc
 | 層 | 扱い |
 |---|---|
 | External Script の非 0 exit | 正常系。`fumi.run` は resolve し、ユーザーコードが `exitCode` で分岐 |
-| External Script の stdout/stderr が 1MB 超 | Host が `error: { code: "OUTPUT_TOO_LARGE" }` で応答 → `fumi.run` は reject |
-| パス検証失敗 (scripts/ 外) | Host が `error: { code: "INVALID_SCRIPT_PATH" }` → reject |
-| timeout | Host が SIGTERM→SIGKILL、`error: { code: "TIMEOUT" }` → reject |
+| External Script の stdout/stderr がサイズ上限超 | Host が `error.data.fumiCode: "EXEC_OUTPUT_TOO_LARGE"` (code -33031) で応答 → `fumi.run` は reject |
+| パス検証失敗 (scripts/ 外) | Host が `error.data.fumiCode: "SCRIPT_INVALID_PATH"` (code -33020) → reject |
+| timeout | Host が SIGTERM→SIGKILL、`error.data.fumiCode: "EXEC_TIMEOUT"` (code -33030) → reject |
 | Host 起動失敗 (manifest 未配置) | Chrome が `chrome.runtime.lastError` を立てる。SW は Popup に「Host 未接続」として反映 |
-| getActions で 1MB 超 | `error: { code: "ACTIONS_TOO_LARGE" }` → Popup にエラー表示、登録は前回状態維持 |
+| actions/list で 1MB 超 | `error.data.fumiCode: "STORE_ACTIONS_TOO_LARGE"` (code -33010) → Popup にエラー表示、登録は前回状態維持 |
 
 エラーコードの一覧は [protocol.md](./protocol.md) §3。
