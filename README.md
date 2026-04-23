@@ -157,7 +157,7 @@ Deeper docs live alongside the code:
 
 ## Status
 
-Early development. Expect breaking changes until `v0.1.0`.
+Early development. Expect breaking changes.
 
 ## License
 
