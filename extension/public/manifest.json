@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "fumi",
+  "version": "0.1.0",
+  "description": "Bridge browser JS and host-side scripts via Native Messaging.",
+  "permissions": ["userScripts", "nativeMessaging", "contextMenus", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background/index.js",
+    "type": "module"
+  },
+  "action": { "default_popup": "popup.html" },
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "key": "REPLACE_WITH_BASE64_PUBLIC_KEY"
+}

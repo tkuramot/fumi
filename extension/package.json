@@ -1,0 +1,25 @@
+{
+	"name": "fumi-extension",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Bridge browser JS and host-side scripts via Native Messaging.",
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json && cp -R public/. dist/ && node -e \"const f='dist/user-script/prelude.js';require('fs').writeFileSync(f,require('fs').readFileSync(f,'utf8').replace(/^export \\{\\};\\s*$/m,''));\"",
+		"watch": "tsc -p tsconfig.build.json -w",
+		"test": "tsc -p tsconfig.json && node --test 'dist/**/*.test.js'",
+		"typecheck": "tsc --noEmit",
+		"format": "biome format --write .",
+		"lint": "biome lint .",
+		"check": "biome check --write ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.13",
+		"@types/chrome": "^0.0.270",
+		"@types/node": "^22.19.17",
+		"typescript": "^5.9.3"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>fumi</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 13px;
+        margin: 0;
+        padding: 12px;
+        width: 280px;
+      }
+      h1 {
+        font-size: 14px;
+        margin: 0 0 8px;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 4px 8px;
+        margin: 0 0 12px;
+      }
+      dt {
+        color: #666;
+      }
+      dd {
+        margin: 0;
+        word-break: break-word;
+      }
+      button {
+        width: 100%;
+        padding: 6px 10px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .ok {
+        color: #188038;
+      }
+      .err {
+        color: #c5221f;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>fumi</h1>
+    <dl>
+      <dt>Status</dt>
+      <dd id="status">—</dd>
+      <dt>Actions</dt>
+      <dd id="count">—</dd>
+      <dt>Fetched</dt>
+      <dd id="at">—</dd>
+      <dt>Error</dt>
+      <dd id="error">—</dd>
+    </dl>
+    <button id="resync">Refetch actions</button>
+    <script type="module" src="popup/popup.js"></script>
+  </body>
+</html>

@@ -26,6 +26,7 @@
             pkgs.go-tools
 
             pkgs.nodejs_24
+            pkgs.pnpm
             pkgs.typescript
 
             pkgs.jq
