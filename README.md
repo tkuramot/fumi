@@ -143,17 +143,16 @@ fumi is designed so a compromised page or extension **cannot reach beyond your o
 - Scripts are spawned directly (no shell); payloads arrive on **stdin only**, never as argv.
 - `allowed_origins` is pinned to fumi's Extension IDs.
 
-For the full threat model, see the spec.
+For the full threat model, see [docs/security.md](./docs/security.md).
 
 ## Documentation
 
-Deeper docs live alongside the code:
-
-- [Specification](./docs/spec.md) — requirements & behavior
-- [Design docs](./docs/design/) — architecture, protocol, extension, host, CLI internals
-- **API reference** — *TBD*
-- **Action authoring guide** — *TBD*
-- **Cookbook / recipes** — *TBD*
+- [Installation](./docs/installation.md) — build, setup, extension loading, updates, uninstall
+- [Authoring actions](./docs/authoring-actions.md) — frontmatter, match patterns, the `fumi.run` API
+- [Authoring scripts](./docs/authoring-scripts.md) — stdin/stdout contract, env vars, limits
+- [CLI reference](./docs/cli-reference.md) — every subcommand, flags, exit codes
+- [Security model](./docs/security.md) — threat model, resolution rules, error codes
+- [Troubleshooting](./docs/troubleshooting.md) — common errors and fixes
 
 ## Status
 
