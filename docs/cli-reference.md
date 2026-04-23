@@ -102,6 +102,25 @@ fumi uninstall [--browser chrome] [--all-browsers] [--manifest-dir PATH]
 
 If the manifest is already missing, the command logs `[skip]` and exits 0.
 
+## Configuration file
+
+`fumi setup` writes a template `config.toml` at the store root (`~/.config/fumi/config.toml` by default, mode `0600`). All fields are optional; omitting the file is equivalent to accepting every default. `fumi doctor` reports a parse error as `STORE_CONFIG_INVALID`.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `store_root` | string | `~/.config/fumi` | Store root path. A leading `~` is expanded. Overridden by the `FUMI_STORE` environment variable when set. |
+| `default_timeout_ms` | integer | `30000` | Default timeout (milliseconds) for script execution. Applies to both `fumi scripts run` (unless `--timeout` is passed) and `fumi.run()` calls from actions (unless `opts.timeoutMs` is passed). Values `<= 0` fall back to the 30s default. |
+
+Example:
+
+```toml
+# ~/.config/fumi/config.toml
+store_root = "~/.config/fumi"
+default_timeout_ms = 10000
+```
+
+Store-root resolution priority: `$FUMI_STORE` > `store_root` in `config.toml` > built-in default.
+
 ## Environment variables
 
 | Variable | Read by | Effect |
