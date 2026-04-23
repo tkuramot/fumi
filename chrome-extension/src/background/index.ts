@@ -21,7 +21,15 @@ chrome.runtime.onStartup.addListener(() => {
 
 // Internal router: SW <-> User Script ({kind, params}). Distinct from the
 // JSON-RPC layer used by call() for SW <-> Host.
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+//
+// Messages from USER_SCRIPT world arrive via onUserScriptMessage (Chrome
+// 120+); regular onMessage does not see them. We listen on both so that
+// companion content scripts / popup could also route through here.
+const userScriptListener = (
+	msg: unknown,
+	_sender: chrome.runtime.MessageSender,
+	sendResponse: (r: unknown) => void,
+): boolean => {
 	routeUserScriptMessage(msg as UserScriptMessage)
 		.then((result) => sendResponse({ result }))
 		.catch((e: unknown) =>
@@ -33,7 +41,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 			}),
 		);
 	return true; // keep the message channel open for async response
-});
+};
+
+chrome.runtime.onUserScriptMessage.addListener(userScriptListener);
+chrome.runtime.onMessage.addListener(userScriptListener);
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
 	if (!tab?.id) return;
