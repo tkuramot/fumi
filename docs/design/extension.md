@@ -5,7 +5,7 @@
 ## 1. ディレクトリ
 
 ```
-extension/
+chrome-extension/
 ├── package.json                # dev deps: typescript, @types/chrome のみ
 ├── tsconfig.json
 ├── public/                     # tsc 後に dist/ へそのままコピー

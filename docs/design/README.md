@@ -10,7 +10,7 @@
 | Native Messaging Host (`fumi-host`) | Go | `go build` |
 | CLI (`fumi`) | Go | `go build` |
 
-Go 側は **単一 Go module** (`go.mod` をリポジトリルートに配置) とし、`host/` と `cli/` をそれぞれの `main` パッケージ、共有コードを `internal/` に集約する。TypeScript 側は `extension/` 単独の npm プロジェクト。
+Go 側は **単一 Go module** (`go.mod` をリポジトリルートに配置) とし、`host/` と `cli/` をそれぞれの `main` パッケージ、共有コードを `internal/` に集約する。TypeScript 側は `chrome-extension/` 単独の npm プロジェクト。
 
 ## 依存ポリシー
 

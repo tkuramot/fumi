@@ -28,7 +28,7 @@ fumi/
 │   ├── store/                   # ストアパス解決・frontmatter parser・セキュリティ検証
 │   ├── protocol/                # Native Messaging 4B LE + JSON エンコーダ/デコーダ
 │   └── runner/                  # scripts/run のコアロジック (host と `fumi scripts run` で共有)
-├── extension/
+├── chrome-extension/
 │   ├── package.json             # dev deps: typescript, @types/chrome のみ
 │   ├── tsconfig.json
 │   ├── public/

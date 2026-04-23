@@ -235,7 +235,7 @@ External Script を起動する (AIP-136 のカスタム動詞)。
 
 ## 5. TypeScript / Go の型対応
 
-### 5.1. TypeScript (`extension/src/shared/protocol.ts`)
+### 5.1. TypeScript (`chrome-extension/src/shared/protocol.ts`)
 
 ```ts
 type JsonRpcId = string;  // UUIDv4
