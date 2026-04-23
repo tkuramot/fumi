@@ -22,9 +22,9 @@ chrome.runtime.onStartup.addListener(() => {
 // Internal router: SW <-> User Script ({kind, params}). Distinct from the
 // JSON-RPC layer used by call() for SW <-> Host.
 //
-// Messages from USER_SCRIPT world arrive via onUserScriptMessage (Chrome
-// 120+); regular onMessage does not see them. We listen on both so that
-// companion content scripts / popup could also route through here.
+// Userscripts (USER_SCRIPT world, Chrome 120+) reach us via
+// onUserScriptMessage; the popup uses onMessage. Register the same
+// router on both so one code path handles both.
 const userScriptListener = (
 	msg: unknown,
 	_sender: chrome.runtime.MessageSender,
