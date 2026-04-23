@@ -18,9 +18,6 @@ type Config struct {
 }
 
 func userConfigDir() string {
-	if d, err := os.UserConfigDir(); err == nil {
-		return d
-	}
 	if h, err := os.UserHomeDir(); err == nil {
 		return filepath.Join(h, ".config")
 	}
