@@ -1,14 +1,28 @@
 # Installation
 
-fumi is macOS-only and targets Google Chrome. It is distributed as two Go binaries (`fumi`, `fumi-host`) plus an unpacked Chrome extension. A Homebrew tap and Chrome Web Store listing are planned but not yet available, so the only supported install path today is building from source.
+fumi is macOS-only and targets Google Chrome. It is distributed as two Go binaries (`fumi`, `fumi-host`) plus an unpacked Chrome extension. The Chrome Web Store listing is still planned; until it lands, the extension has to be loaded unpacked, but the binaries and the extension bundle are both published by the release workflow — you don't need to build from source.
 
 ## Requirements
 
 - macOS (Darwin). The CLI refuses to run on other platforms.
 - Google Chrome with **Developer mode** enabled. fumi uses `chrome.userScripts`, which Chrome gates behind this flag.
-- Go 1.26+ and Node.js 22+ (with pnpm) for building.
+- Go 1.26+ and Node.js 22+ (with pnpm) — **only if building from source**.
 
-## Build
+## Get the binaries
+
+### Option A: Homebrew (recommended)
+
+```bash
+brew install --cask tkuramot/tap/fumi
+```
+
+Installs `fumi` and `fumi-host` to `/opt/homebrew/bin`, which is the default `hostBinaryPath` baked into the Native Messaging manifest.
+
+### Option B: GitHub Releases
+
+Download the `fumi_<version>_darwin_<arch>.tar.gz` archive for your Mac from the latest [GitHub release](https://github.com/tkuramot/fumi/releases), extract, and place `fumi` and `fumi-host` on your `PATH`. If you install `fumi-host` somewhere other than `/opt/homebrew/bin`, re-run `fumi setup --force` after moving it so the manifest points at the new location.
+
+### Option C: Build from source
 
 ```bash
 git clone https://github.com/tkuramot/fumi.git
@@ -54,10 +68,11 @@ Useful flags:
 
 ### 2. Load the Chrome extension (unpacked)
 
-1. Open `chrome://extensions` and enable **Developer mode**.
-2. Click **Load unpacked** and select `chrome-extension/dist`.
-3. Copy the **Extension ID** shown on the card.
-4. Open the extension's **Details** page and toggle **Allow User Scripts** on. fumi uses `chrome.userScripts`, which Chrome keeps disabled by default even with Developer mode enabled; without this toggle the service worker crashes on startup (see [troubleshooting.md](./troubleshooting.md#configureworld-error-in-the-service-worker)).
+1. Download `fumi-extension_<version>.zip` from the latest [GitHub release](https://github.com/tkuramot/fumi/releases) and unzip it to a stable location (Chrome reads the extension from this directory on every launch, so don't delete it). If you built from source, use `chrome-extension/dist` instead.
+2. Open `chrome://extensions` and enable **Developer mode**.
+3. Click **Load unpacked** and select the unzipped directory.
+4. Copy the **Extension ID** shown on the card.
+5. Open the extension's **Details** page and toggle **Allow User Scripts** on. fumi uses `chrome.userScripts`, which Chrome keeps disabled by default even with Developer mode enabled; without this toggle the service worker crashes on startup (see [troubleshooting.md](./troubleshooting.md#configureworld-error-in-the-service-worker)).
 
    ![Allow User Scripts toggle on the extension details page](./images/allow-user-scripts.png)
 
@@ -76,6 +91,16 @@ fumi doctor
 All rows should be `[OK]`. See [troubleshooting.md](./troubleshooting.md) if any are `[NG]`.
 
 ## Updating
+
+### Homebrew
+
+```bash
+brew upgrade --cask tkuramot/tap/fumi
+```
+
+Then download the matching `fumi-extension_<version>.zip` from the latest [GitHub release](https://github.com/tkuramot/fumi/releases), replace the files in your previously-unzipped extension directory, and click **Reload** on the extension card in `chrome://extensions`. Keep the binary and extension versions in sync — the Native Messaging protocol isn't versioned, so mixing a newer extension with an older host (or vice versa) is not supported.
+
+### From source
 
 ```bash
 git pull

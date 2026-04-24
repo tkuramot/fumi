@@ -53,28 +53,21 @@ document.addEventListener('keydown', async (e) => {
 
 | Channel | Status |
 |---|---|
-| Homebrew tap (`brew install fumi`) | *TBD* |
+| Homebrew tap (`brew install --cask tkuramot/tap/fumi`) | available |
+| GitHub Releases (binaries + extension zip) | available |
 | Chrome Web Store listing | *TBD* |
 
-Until those land, use the build-from-source + unpacked-extension flow below.
+The extension still has to be loaded unpacked until the Chrome Web Store listing lands, but you no longer need to build the Go binaries or the extension yourself — download the pre-built zip from the latest [GitHub release](https://github.com/tkuramot/fumi/releases).
 
 ## Quick start
 
-### 1. Build from source
+### 1. Install the binaries
 
 ```bash
-git clone https://github.com/tkuramot/fumi.git
-cd fumi
-
-# Build the CLI and native messaging host
-go build -o ./bin/fumi ./cmd/fumi
-go build -o ./bin/fumi-host ./cmd/fumi-host
-
-# Build the Chrome extension
-cd chrome-extension && pnpm install && pnpm build && cd ..
+brew install --cask tkuramot/tap/fumi
 ```
 
-Put `./bin` on your `PATH`, or copy `fumi` / `fumi-host` somewhere already on it.
+This installs both `fumi` and `fumi-host` to `/opt/homebrew/bin` (the path the Native Messaging manifest expects by default). See [docs/installation.md](./docs/installation.md) for other install paths, including building from source.
 
 ### 2. Set up the native host and store
 
@@ -86,8 +79,9 @@ This places the Native Messaging manifest, creates `~/.config/fumi/{actions,scri
 
 ### 3. Load the Chrome extension (unpacked)
 
-1. Visit `chrome://extensions` and enable **Developer mode**.
-2. Click **Load unpacked** and select the `chrome-extension/dist` directory from the repo.
+1. Download `fumi-extension_<version>.zip` from the latest [GitHub release](https://github.com/tkuramot/fumi/releases) and unzip it (or use `chrome-extension/dist` if you built from source).
+2. Visit `chrome://extensions` and enable **Developer mode**.
+3. Click **Load unpacked** and select the unzipped directory.
 
 ### 4. Verify
 
