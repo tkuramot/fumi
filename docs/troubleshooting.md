@@ -43,6 +43,16 @@ chmod 700 ~/.config/fumi
 chmod 700 ~/.config/fumi/actions ~/.config/fumi/scripts
 ```
 
+## `configureWorld` error in the service worker
+
+Symptom: the extension's service worker logs
+
+> Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'configureWorld')
+
+![configureWorld TypeError in the extension error log](./images/undefined-configureWorld.png)
+
+Cause: **Allow User Scripts** is off on the extension's details page, so `chrome.userScripts` is `undefined`. Toggle it on (see [installation.md](./installation.md#2-load-the-chrome-extension-unpacked)) and reload the extension.
+
 ## An action never injects
 
 1. Open the fumi popup and click **Reload actions**. The extension does not watch the filesystem.

@@ -61,6 +61,9 @@ Useful flags:
 1. Open `chrome://extensions` and enable **Developer mode**.
 2. Click **Load unpacked** and select `chrome-extension/dist`.
 3. Copy the **Extension ID** shown on the card.
+4. Open the extension's **Details** page and toggle **Allow User Scripts** on. fumi uses `chrome.userScripts`, which Chrome keeps disabled by default even with Developer mode enabled; without this toggle the service worker crashes on startup (see [troubleshooting.md](./troubleshooting.md#configureworld-error-in-the-service-worker)).
+
+   ![Allow User Scripts toggle on the extension details page](./images/allow-user-scripts.png)
 
 ### 3. Pin the extension ID
 
