@@ -10,8 +10,7 @@ import (
 )
 
 type Config struct {
-	StoreRoot        string `toml:"store_root"`
-	DefaultTimeoutMs int    `toml:"default_timeout_ms"`
+	DefaultTimeoutMs int `toml:"default_timeout_ms"`
 
 	// Path records where the config was loaded from (empty if defaults were used).
 	Path string `toml:"-"`

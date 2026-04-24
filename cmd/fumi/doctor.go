@@ -17,7 +17,6 @@ func doctorCmd() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "browser", Value: "chrome"},
 			&cli.StringFlag{Name: "manifest-dir", Hidden: true},
-			&cli.StringFlag{Name: "store-root", Hidden: true},
 		},
 		Action: runDoctor,
 	}
@@ -91,21 +90,16 @@ func runDoctor(c *cli.Context) error {
 	}
 
 	// Store
-	cfg, cfgErr := config.Load()
+	_, cfgErr := config.Load()
 	if cfgErr != nil {
 		check(statusNG, fmt.Sprintf("config.toml: parse error (%v)", cfgErr))
 	}
-	var root string
-	if override := c.String("store-root"); override != "" {
-		root = override
-	} else {
-		paths, err := store.Resolve(cfg)
-		if err != nil {
-			check(statusNG, fmt.Sprintf("Resolve store root: %v", err))
-			return finalize(w, ng)
-		}
-		root = paths.Root
+	paths, err := store.Resolve()
+	if err != nil {
+		check(statusNG, fmt.Sprintf("Resolve store root: %v", err))
+		return finalize(w, ng)
 	}
+	root := paths.Root
 
 	if info, err := os.Stat(root); err != nil {
 		check(statusNG, fmt.Sprintf("Store: %s (%v)", root, err))

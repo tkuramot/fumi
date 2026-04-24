@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/tkuramot/fumi/internal/config"
 	"github.com/tkuramot/fumi/internal/store"
 	"github.com/urfave/cli/v2"
 )
@@ -17,7 +18,6 @@ func setupCmd() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "browser", Value: "chrome", Usage: "target browser"},
 			&cli.BoolFlag{Name: "force", Usage: "overwrite existing manifest with a mismatching Extension ID"},
-			&cli.StringFlag{Name: "store-root", Usage: "override store root (test hook)", Hidden: true},
 			&cli.StringFlag{Name: "manifest-dir", Usage: "override manifest directory (test hook)", Hidden: true},
 		},
 		Action: runSetup,
@@ -25,14 +25,11 @@ func setupCmd() *cli.Command {
 }
 
 func runSetup(c *cli.Context) error {
-	root := c.String("store-root")
-	if root == "" {
-		paths, err := store.Resolve(nil)
-		if err != nil {
-			return cli.Exit(fmt.Sprintf("failed to resolve store root: %v", err), exitDomain)
-		}
-		root = paths.Root
+	paths, err := store.Resolve()
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("failed to resolve store root: %v", err), exitDomain)
 	}
+	root := paths.Root
 	if err := initStore(root); err != nil {
 		return cli.Exit(fmt.Sprintf("failed to initialize store: %v", err), exitDomain)
 	}
@@ -92,7 +89,10 @@ func initStore(root string) error {
 			return err
 		}
 	}
-	cfgPath := filepath.Join(root, "config.toml")
+	cfgPath := config.DefaultPath()
+	if err := os.MkdirAll(filepath.Dir(cfgPath), 0o700); err != nil {
+		return err
+	}
 	if _, err := os.Stat(cfgPath); errors.Is(err, os.ErrNotExist) {
 		if err := os.WriteFile(cfgPath, []byte(defaultConfigTOML), 0o600); err != nil {
 			return err
@@ -102,7 +102,6 @@ func initStore(root string) error {
 }
 
 const defaultConfigTOML = `# fumi configuration. All fields are optional.
-# store_root = "~/.config/fumi"
 # default_timeout_ms = 30000
 `
 

@@ -11,7 +11,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/tkuramot/fumi/internal/config"
 	"github.com/tkuramot/fumi/internal/protocol"
 	"github.com/tkuramot/fumi/internal/runner"
 	"github.com/tkuramot/fumi/internal/store"
@@ -45,8 +44,7 @@ func scriptsCmd() *cli.Command {
 }
 
 func runScriptsList(c *cli.Context) error {
-	cfg, _ := config.Load()
-	paths, err := store.Resolve(cfg)
+	paths, err := store.Resolve()
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("failed to resolve store: %v", err), exitDomain)
 	}
@@ -97,8 +95,7 @@ func runScriptsRun(c *cli.Context) error {
 	}
 	rel := c.Args().First()
 
-	cfg, _ := config.Load()
-	paths, err := store.Resolve(cfg)
+	paths, err := store.Resolve()
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("failed to resolve store: %v", err), exitDomain)
 	}

@@ -45,14 +45,12 @@ fumi setup
 This does, in order:
 
 1. Creates the store at `~/.config/fumi/` (or `$FUMI_STORE` if set). Subdirectories `actions/` and `scripts/` are created with mode `0700`.
-2. Writes a template `config.toml` at the store root (mode `0600`).
+2. Writes a template `config.toml` at `~/.config/fumi/config.toml` (mode `0600`).
 3. Writes the Native Messaging manifest to `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.tkrmt.fumi.json`.
 
 Useful flags:
 
 - `--force` — overwrite an existing manifest (safe; does not touch the store).
-- `--store-root PATH` — use a non-default store location.
-- `--manifest-dir PATH` — write the manifest to a custom directory (e.g. for Chrome Canary).
 
 `fumi setup` does **not** create sample actions or scripts.
 

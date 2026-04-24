@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/tkuramot/fumi/internal/config"
 )
 
 type Paths struct {
@@ -38,22 +36,12 @@ func expandTilde(p string) string {
 	return p
 }
 
-func firstNonEmpty(vals ...string) string {
-	for _, v := range vals {
-		if v != "" {
-			return v
-		}
+// Resolve determines the store root. Priority: $FUMI_STORE > default.
+func Resolve() (*Paths, error) {
+	root := os.Getenv("FUMI_STORE")
+	if root == "" {
+		root = defaultRoot()
 	}
-	return ""
-}
-
-// Resolve determines the store root. Priority: $FUMI_STORE > config.store_root > default.
-func Resolve(cfg *config.Config) (*Paths, error) {
-	var cfgRoot string
-	if cfg != nil {
-		cfgRoot = cfg.StoreRoot
-	}
-	root := firstNonEmpty(os.Getenv("FUMI_STORE"), cfgRoot, defaultRoot())
 	root = expandTilde(root)
 	abs, err := filepath.Abs(root)
 	if err != nil {

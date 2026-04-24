@@ -16,15 +16,16 @@ All commands are subcommands of `fumi`. Invoke with `--help` on any subcommand f
 Initializes the store and installs the Native Messaging manifest.
 
 ```
-fumi setup [--browser chrome] [--force] [--store-root PATH] [--manifest-dir PATH]
+fumi setup [--browser chrome] [--force] [--manifest-dir PATH]
 ```
 
 | Flag | Default | Description |
 |---|---|---|
 | `--browser` | `chrome` | Target browser. Only `chrome` is supported. |
 | `--force` | off | Overwrite an existing manifest. Never touches the store. |
-| `--store-root` | `$FUMI_STORE` or `~/.config/fumi` | Store root to initialize. |
 | `--manifest-dir` | Chrome's default `NativeMessagingHosts` | Directory to write the manifest into. |
+
+The store root is `$FUMI_STORE` if set, otherwise `~/.config/fumi`.
 
 Idempotent. Running twice without `--force` leaves the manifest in place; the store is created only if missing.
 
@@ -33,7 +34,7 @@ Idempotent. Running twice without `--force` leaves the manifest in place; the st
 Reports the state of the installation. Prints one line per check.
 
 ```
-fumi doctor [--browser chrome] [--manifest-dir PATH] [--store-root PATH]
+fumi doctor [--browser chrome] [--manifest-dir PATH]
 ```
 
 Checks performed:
@@ -104,22 +105,20 @@ If the manifest is already missing, the command logs `[skip]` and exits 0.
 
 ## Configuration file
 
-`fumi setup` writes a template `config.toml` at the store root (`~/.config/fumi/config.toml` by default, mode `0600`). All fields are optional; omitting the file is equivalent to accepting every default. `fumi doctor` reports a parse error as `STORE_CONFIG_INVALID`.
+`fumi setup` writes a template `config.toml` at `~/.config/fumi/config.toml` (mode `0600`). All fields are optional; omitting the file is equivalent to accepting every default. `fumi doctor` reports a parse error as `STORE_CONFIG_INVALID`.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `store_root` | string | `~/.config/fumi` | Store root path. A leading `~` is expanded. Overridden by the `FUMI_STORE` environment variable when set. |
 | `default_timeout_ms` | integer | `30000` | Default timeout (milliseconds) for script execution. Applies to both `fumi scripts run` (unless `--timeout` is passed) and `fumi.run()` calls from actions (unless `opts.timeoutMs` is passed). Values `<= 0` fall back to the 30s default. |
 
 Example:
 
 ```toml
 # ~/.config/fumi/config.toml
-store_root = "~/.config/fumi"
 default_timeout_ms = 10000
 ```
 
-Store-root resolution priority: `$FUMI_STORE` > `store_root` in `config.toml` > built-in default.
+Store-root resolution priority: `$FUMI_STORE` > built-in default (`~/.config/fumi`).
 
 ## Environment variables
 

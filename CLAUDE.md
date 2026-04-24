@@ -56,7 +56,7 @@ Types in `internal/protocol/types.go`; framing in `internal/protocol/codec.go`; 
 
 ### Store resolution
 
-`internal/config` loads `~/.config/fumi/config.toml` (missing file = defaults, not error). `internal/store/paths.go#Resolve` picks the store root with priority **`$FUMI_STORE` > `config.store_root` > OS default**, expands `~`, and returns `{Root, Actions, Scripts}`. Any code that needs store paths should go through `store.Resolve(cfg)` rather than reconstructing paths.
+`internal/config` loads `~/.config/fumi/config.toml` (missing file = defaults, not error). `internal/store/paths.go#Resolve` picks the store root with priority **`$FUMI_STORE` > OS default (`~/.config/fumi`)**, expands `~`, and returns `{Root, Actions, Scripts}`. Any code that needs store paths should go through `store.Resolve()` rather than reconstructing paths.
 
 ### Script execution (security-critical)
 

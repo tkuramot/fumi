@@ -78,7 +78,7 @@ func run(stdin io.Reader, stdout, stderr io.Writer) (code int) {
 		return 0
 	}
 
-	paths, pathErr := store.Resolve(cfg)
+	paths, pathErr := store.Resolve()
 	if pathErr != nil {
 		if !isNotification {
 			writeErrorObj(stdout, respID, protocol.NewError(

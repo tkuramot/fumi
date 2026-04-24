@@ -5,7 +5,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/tkuramot/fumi/internal/config"
 	"github.com/tkuramot/fumi/internal/store"
 	"github.com/urfave/cli/v2"
 )
@@ -25,8 +24,7 @@ func actionsCmd() *cli.Command {
 }
 
 func runActionsList(c *cli.Context) error {
-	cfg, _ := config.Load()
-	paths, err := store.Resolve(cfg)
+	paths, err := store.Resolve()
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("failed to resolve store: %v", err), exitDomain)
 	}
