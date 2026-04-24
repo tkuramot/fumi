@@ -36,8 +36,8 @@ pnpm -C chrome-extension build
 
 MANIFEST="chrome-extension/dist/manifest.json"
 # Inject the real public key into the built manifest (never the source).
-# '|' is safe as a sed delimiter — base64 alphabet is [A-Za-z0-9+/=].
-sed -i '' "s|REPLACE_WITH_BASE64_PUBLIC_KEY|$PUBKEY_B64|" "$MANIFEST"
+# perl -i is portable across BSD/GNU (unlike sed -i, whose flag syntax differs).
+PUBKEY_B64="$PUBKEY_B64" perl -i -pe 's|REPLACE_WITH_BASE64_PUBLIC_KEY|$ENV{PUBKEY_B64}|' "$MANIFEST"
 
 echo "$EXT_ID" > .dev/extension-id
 echo "done. load chrome-extension/dist/ as unpacked extension."
