@@ -22,7 +22,6 @@ export type ScriptsRunParams = {
 	scriptPath: string;
 	payload: unknown;
 	timeoutMs?: number;
-	context?: Record<string, string>;
 };
 
 export type Request = ActionsListRequest | ScriptsRunRequest;

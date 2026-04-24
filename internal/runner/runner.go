@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -27,7 +25,6 @@ type RunParams struct {
 	Payload   json.RawMessage
 	Timeout   time.Duration
 	StoreRoot string
-	ExtraEnv  map[string]string
 }
 
 type RunOutcome struct {
@@ -37,24 +34,7 @@ type RunOutcome struct {
 	DurationMs int64
 }
 
-var envKeyRe = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*$`)
-
-func camelToScreamingSnake(s string) string {
-	var b strings.Builder
-	for i, r := range s {
-		if i > 0 && r >= 'A' && r <= 'Z' {
-			b.WriteByte('_')
-		}
-		if r >= 'a' && r <= 'z' {
-			b.WriteRune(r - 32)
-		} else {
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
-
-func buildEnv(storeRoot string, extra map[string]string) ([]string, *protocol.RpcError) {
+func buildEnv(storeRoot string) []string {
 	env := os.Environ()
 	// Strip any inherited FUMI_* to prevent accidental leakage; they will be re-set explicitly.
 	filtered := env[:0]
@@ -65,19 +45,7 @@ func buildEnv(storeRoot string, extra map[string]string) ([]string, *protocol.Rp
 		filtered = append(filtered, e)
 	}
 	filtered = append(filtered, "FUMI_STORE="+storeRoot)
-	for k, v := range extra {
-		if !envKeyRe.MatchString(k) {
-			return nil, protocol.NewError("PROTO_INVALID_PARAMS",
-				fmt.Sprintf("invalid context key: %q", k), map[string]any{"key": k})
-		}
-		name := "FUMI_" + camelToScreamingSnake(k)
-		if name == "FUMI_STORE" {
-			return nil, protocol.NewError("PROTO_INVALID_PARAMS",
-				"context key 'store' is reserved", map[string]any{"key": k})
-		}
-		filtered = append(filtered, name+"="+v)
-	}
-	return filtered, nil
+	return filtered
 }
 
 type cappedBuffer struct {
@@ -112,10 +80,7 @@ func Run(ctx context.Context, p *RunParams) (*RunOutcome, *protocol.RpcError) {
 	runCtx, cancel := context.WithTimeout(ctx, p.Timeout)
 	defer cancel()
 
-	env, envErr := buildEnv(p.StoreRoot, p.ExtraEnv)
-	if envErr != nil {
-		return nil, envErr
-	}
+	env := buildEnv(p.StoreRoot)
 
 	cmd := exec.Command(p.Script.AbsPath)
 	cmd.Dir = p.Script.Cwd

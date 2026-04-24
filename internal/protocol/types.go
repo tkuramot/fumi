@@ -47,10 +47,9 @@ type GetActionsResult struct {
 }
 
 type RunScriptParams struct {
-	ScriptPath string            `json:"scriptPath"`
-	Payload    json.RawMessage   `json:"payload"`
-	TimeoutMs  *int              `json:"timeoutMs,omitempty"`
-	Context    map[string]string `json:"context,omitempty"`
+	ScriptPath string          `json:"scriptPath"`
+	Payload    json.RawMessage `json:"payload"`
+	TimeoutMs  *int            `json:"timeoutMs,omitempty"`
 }
 
 type RunScriptResult struct {

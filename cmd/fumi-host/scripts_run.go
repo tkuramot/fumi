@@ -49,7 +49,6 @@ func handleScriptsRun(ctx context.Context, cfg *config.Config, paths *store.Path
 		Payload:   params.Payload,
 		Timeout:   timeout,
 		StoreRoot: paths.Root,
-		ExtraEnv:  params.Context,
 	})
 	if rpcErr != nil {
 		return nil, rpcErr
