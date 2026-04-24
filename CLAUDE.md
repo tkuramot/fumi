@@ -30,8 +30,7 @@ Run one extension test: `pnpm exec tsc -p tsconfig.json && node --test dist/back
 
 There are currently no Go tests in the repo; `go test ./...` is a no-op but fine to run.
 
-Release builds override identity constants via ldflags (see `cmd/fumi/constants.go`):
-`-X main.webStoreExtensionID=... -X main.unpackedExtensionID=... -X main.hostBinaryPath=...`.
+The extension ID is derived from the `"key"` field in `chrome-extension/public/manifest.json` and the `extensionID` constant in `cmd/fumi/constants.go`; both are committed and written by `./scripts/gen-release-key.sh` (one-time). Release builds only override `-X main.hostBinaryPath=...` via goreleaser ldflags.
 
 ## Architecture
 

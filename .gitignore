@@ -37,5 +37,5 @@ go.work.sum
 # Build output
 /bin/
 
-# Local dev state (extension signing key, derived IDs)
-/.dev/
+# Release-time extension signing key (public values committed; private PEM is not).
+/release-key.pem

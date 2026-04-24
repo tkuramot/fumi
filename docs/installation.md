@@ -24,15 +24,13 @@ Place `fumi` and `fumi-host` somewhere on your `PATH`. The path to `fumi-host` i
 
 ### Build-time variables
 
-The two binaries embed three values at build time via `-ldflags`. The dev defaults work for a from-source install, but production builds should override them:
+The extension ID is baked in from `cmd/fumi/constants.go` (`extensionID`, committed) and derived from the `"key"` field in `chrome-extension/public/manifest.json`. Both are written by `./scripts/gen-release-key.sh` once per project and committed — so dev, unpacked, and Chrome Web Store installs all share the same ID. No per-build override is needed.
+
+Only one value is overridden at release time via `-ldflags`:
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `main.hostBinaryPath` | `/opt/homebrew/bin/fumi-host` | Path written into the Native Messaging manifest |
-| `main.webStoreExtensionID` | 32 × `a` | Chrome Web Store extension ID, pinned in `allowed_origins` |
-| `main.unpackedExtensionID` | 32 × `b` | Unpacked extension ID, pinned in `allowed_origins` |
-
-For a local unpacked install, set `main.unpackedExtensionID` to match your unpacked extension's ID (see below).
 
 ## Install
 
@@ -63,18 +61,11 @@ Useful flags:
 
    ![Allow User Scripts toggle on the extension details page](./images/allow-user-scripts.png)
 
-### 3. Pin the extension ID
+### 3. Verify the extension ID matches
 
-The manifest's `allowed_origins` must contain your exact unpacked ID or Chrome will refuse to connect to the host. If the ID you copied does not match what was baked into your build, rebuild with:
+The Native Messaging manifest's `allowed_origins` must contain your loaded extension's exact ID, or Chrome will refuse to connect to the host. Because the `"key"` committed in `chrome-extension/public/manifest.json` deterministically derives the ID, the value Chrome shows on `chrome://extensions` should match the one baked into `fumi` — run `fumi doctor` and confirm no `allowed_origins` mismatch is reported.
 
-```bash
-go build \
-  -ldflags "-X main.unpackedExtensionID=<your-extension-id>" \
-  -o ./bin/fumi ./cmd/fumi
-fumi setup --force
-```
-
-To keep the ID stable across reinstalls, set the `"key"` field in `chrome-extension/public/manifest.json` to a base64 public key you control before building; see Chrome's [extension key documentation](https://developer.chrome.com/docs/extensions/reference/manifest/key).
+If you are forking and want your own ID, run `./scripts/gen-release-key.sh` once and commit the patched files; see Chrome's [extension key documentation](https://developer.chrome.com/docs/extensions/reference/manifest/key) for background.
 
 ### 4. Verify
 
@@ -113,5 +104,5 @@ Then remove the extension from `chrome://extensions`.
 ## Known limitations
 
 - Only the default Chrome install is detected. Chrome Canary, Chromium, Chrome Beta, and Chrome Dev each use their own NativeMessagingHosts directory and are not currently supported.
-- Only one `unpackedExtensionID` is pinned per build. If you load the same extension into multiple Chrome profiles with different IDs, only one will work at a time.
+- One extension ID is pinned per build (via the committed manifest `"key"`). Loading the extension into multiple Chrome profiles is fine — they all derive the same ID — but loading a differently-keyed build alongside it will not work.
 - Firefox, Edge, Safari, Linux, and Windows are not supported.

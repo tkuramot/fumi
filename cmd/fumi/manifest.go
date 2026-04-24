@@ -45,8 +45,7 @@ func buildManifest() nativeManifest {
 		Path:        hostBinaryPath,
 		Type:        "stdio",
 		AllowedOrigins: []string{
-			"chrome-extension://" + webStoreExtensionID + "/",
-			"chrome-extension://" + unpackedExtensionID + "/",
+			"chrome-extension://" + extensionID + "/",
 		},
 	}
 }

@@ -14,7 +14,7 @@ or
 
 Causes, in order of frequency:
 
-1. **Extension ID mismatch.** The unpacked extension's ID does not match the one pinned into the manifest's `allowed_origins`. Compare the ID on `chrome://extensions` with the one in `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.tkrmt.fumi.json`. If different, rebuild `fumi` with `-ldflags "-X main.unpackedExtensionID=<id>"` and re-run `fumi setup --force`. See [installation.md](./installation.md#3-pin-the-extension-id).
+1. **Extension ID mismatch.** The loaded extension's ID does not match the one pinned into the Native Messaging manifest's `allowed_origins`. Compare the ID on `chrome://extensions` with the one in `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.tkrmt.fumi.json`. The committed `"key"` in `chrome-extension/public/manifest.json` should make these match automatically — if they don't, your source tree and binaries are out of sync. Rebuild both and re-run `fumi setup --force`. See [installation.md](./installation.md#3-verify-the-extension-id-matches).
 2. **Manifest missing.** You installed the extension but never ran `fumi setup`. Run it.
 3. **Wrong Chrome channel.** You loaded the extension into Chrome Canary or Chromium, which look in different `NativeMessagingHosts` directories. Only stable Google Chrome is supported today.
 4. **`fumi-host` is not where the manifest says.** Check the `path` field in the manifest and make sure the binary exists and is executable. If you moved the binary, re-run `fumi setup --force` after rebuilding with an updated `main.hostBinaryPath`.

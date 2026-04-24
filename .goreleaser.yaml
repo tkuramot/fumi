@@ -1,0 +1,91 @@
+version: 2
+
+project_name: fumi
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: fumi
+    main: ./cmd/fumi
+    binary: fumi
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.hostBinaryPath=/opt/homebrew/bin/fumi-host
+
+  - id: fumi-host
+    main: ./cmd/fumi-host
+    binary: fumi-host
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - id: fumi
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    files:
+      - README.md
+      - LICENSE*
+      - docs/**/*
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+
+release:
+  github:
+    owner: tkuramot
+    name: fumi
+  draft: false
+  prerelease: auto
+  extra_files:
+    - glob: release-artifacts/fumi-extension_*.zip
+
+homebrew_casks:
+  - name: fumi
+    binaries:
+      - fumi
+      - fumi-host
+    repository:
+      owner: tkuramot
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Casks
+    homepage: "https://github.com/tkuramot/fumi"
+    description: "Browser × host machine integration utility"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "Brew cask update for {{ .ProjectName }} version {{ .Tag }}"
+    hooks:
+      post:
+        install: |
+          if OS.mac? && Hardware::CPU.arm?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/fumi"]
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/fumi-host"]
+          end
