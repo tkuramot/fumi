@@ -18,7 +18,6 @@ func setupCmd() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "browser", Value: "chrome", Usage: "target browser"},
 			&cli.BoolFlag{Name: "force", Usage: "overwrite existing manifest with a mismatching Extension ID"},
-			&cli.StringFlag{Name: "manifest-dir", Usage: "override manifest directory (test hook)", Hidden: true},
 		},
 		Action: runSetup,
 	}
@@ -34,13 +33,9 @@ func runSetup(c *cli.Context) error {
 		return cli.Exit(fmt.Sprintf("failed to initialize store: %v", err), exitDomain)
 	}
 
-	manifestDir := c.String("manifest-dir")
-	if manifestDir == "" {
-		dir, err := manifestDirFor(c.String("browser"))
-		if err != nil {
-			return cli.Exit(err.Error(), exitDomain)
-		}
-		manifestDir = dir
+	manifestDir, err := manifestDirFor(c.String("browser"))
+	if err != nil {
+		return cli.Exit(err.Error(), exitDomain)
 	}
 	manifestPath := manifestPathFor(manifestDir)
 

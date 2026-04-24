@@ -16,7 +16,6 @@ func doctorCmd() *cli.Command {
 		Usage: "Diagnose the fumi installation",
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "browser", Value: "chrome"},
-			&cli.StringFlag{Name: "manifest-dir", Hidden: true},
 		},
 		Action: runDoctor,
 	}
@@ -52,14 +51,10 @@ func runDoctor(c *cli.Context) error {
 	}
 
 	// Manifest location
-	manifestDir := c.String("manifest-dir")
-	if manifestDir == "" {
-		d, err := manifestDirFor(c.String("browser"))
-		if err != nil {
-			check(statusNG, fmt.Sprintf("Resolve manifest dir: %v", err))
-			return finalize(w, ng)
-		}
-		manifestDir = d
+	manifestDir, err := manifestDirFor(c.String("browser"))
+	if err != nil {
+		check(statusNG, fmt.Sprintf("Resolve manifest dir: %v", err))
+		return finalize(w, ng)
 	}
 	manifestPath := manifestPathFor(manifestDir)
 

@@ -16,7 +16,7 @@ Causes, in order of frequency:
 
 1. **Extension ID mismatch.** The unpacked extension's ID does not match the one pinned into the manifest's `allowed_origins`. Compare the ID on `chrome://extensions` with the one in `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.tkrmt.fumi.json`. If different, rebuild `fumi` with `-ldflags "-X main.unpackedExtensionID=<id>"` and re-run `fumi setup --force`. See [installation.md](./installation.md#3-pin-the-extension-id).
 2. **Manifest missing.** You installed the extension but never ran `fumi setup`. Run it.
-3. **Wrong Chrome channel.** You loaded the extension into Chrome Canary or Chromium, which look in different `NativeMessagingHosts` directories. Re-run `fumi setup --manifest-dir <that channel's dir>`.
+3. **Wrong Chrome channel.** You loaded the extension into Chrome Canary or Chromium, which look in different `NativeMessagingHosts` directories. Only stable Google Chrome is supported today.
 4. **`fumi-host` is not where the manifest says.** Check the `path` field in the manifest and make sure the binary exists and is executable. If you moved the binary, re-run `fumi setup --force` after rebuilding with an updated `main.hostBinaryPath`.
 5. **macOS quarantine.** A binary downloaded from the web may be marked with `com.apple.quarantine`, preventing exec. For a build you compiled yourself this should not happen, but if `fumi doctor` says the host is not executable, check with `xattr ~/path/to/fumi-host` and clear with `xattr -d com.apple.quarantine ~/path/to/fumi-host`.
 

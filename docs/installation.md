@@ -112,6 +112,6 @@ Then remove the extension from `chrome://extensions`.
 
 ## Known limitations
 
-- Only the default Chrome install is detected. Chrome Canary, Chromium, Chrome Beta, and Chrome Dev each use their own NativeMessagingHosts directory — use `--manifest-dir` to target them.
+- Only the default Chrome install is detected. Chrome Canary, Chromium, Chrome Beta, and Chrome Dev each use their own NativeMessagingHosts directory and are not currently supported.
 - Only one `unpackedExtensionID` is pinned per build. If you load the same extension into multiple Chrome profiles with different IDs, only one will work at a time.
 - Firefox, Edge, Safari, Linux, and Windows are not supported.

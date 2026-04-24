@@ -16,14 +16,13 @@ All commands are subcommands of `fumi`. Invoke with `--help` on any subcommand f
 Initializes the store and installs the Native Messaging manifest.
 
 ```
-fumi setup [--browser chrome] [--force] [--manifest-dir PATH]
+fumi setup [--browser chrome] [--force]
 ```
 
 | Flag | Default | Description |
 |---|---|---|
 | `--browser` | `chrome` | Target browser. Only `chrome` is supported. |
 | `--force` | off | Overwrite an existing manifest. Never touches the store. |
-| `--manifest-dir` | Chrome's default `NativeMessagingHosts` | Directory to write the manifest into. |
 
 The store root is `$FUMI_STORE` if set, otherwise `~/.config/fumi`.
 
@@ -34,7 +33,7 @@ Idempotent. Running twice without `--force` leaves the manifest in place; the st
 Reports the state of the installation. Prints one line per check.
 
 ```
-fumi doctor [--browser chrome] [--manifest-dir PATH]
+fumi doctor [--browser chrome]
 ```
 
 Checks performed:
@@ -92,14 +91,12 @@ Without `--json`, stdout is printed to stdout and stderr to stderr, matching the
 Removes the Native Messaging manifest. **Does not touch the store.**
 
 ```
-fumi uninstall [--browser chrome] [--all-browsers] [--manifest-dir PATH]
+fumi uninstall [--browser chrome]
 ```
 
 | Flag | Default | Description |
 |---|---|---|
 | `--browser` | `chrome` | Target browser. |
-| `--all-browsers` | off | Remove the manifest for every supported browser. Currently equivalent to the default since only Chrome is supported. |
-| `--manifest-dir` | Chrome's default | Override the directory to remove from. |
 
 If the manifest is already missing, the command logs `[skip]` and exits 0.
 
