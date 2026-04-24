@@ -21,15 +21,6 @@ if [[ -e "$KEY_PEM" ]]; then
   exit 1
 fi
 
-if ! grep -q "REPLACE_WITH_BASE64_PUBLIC_KEY" "$MANIFEST"; then
-  echo "error: $MANIFEST has no placeholder — already patched?" >&2
-  exit 1
-fi
-if ! grep -q "REPLACE_WITH_EXTENSION_ID" "$CONSTANTS"; then
-  echo "error: $CONSTANTS has no placeholder — already patched?" >&2
-  exit 1
-fi
-
 openssl genrsa -out "$KEY_PEM" 2048 2>/dev/null
 chmod 600 "$KEY_PEM"
 
@@ -40,8 +31,8 @@ EXT_ID=$(openssl rsa -in "$KEY_PEM" -pubout -outform DER 2>/dev/null \
   | xxd -p -c 32 \
   | tr '0-9a-f' 'a-p')
 
-PUBKEY_B64="$PUBKEY_B64" perl -i -pe 's|REPLACE_WITH_BASE64_PUBLIC_KEY|$ENV{PUBKEY_B64}|' "$MANIFEST"
-EXT_ID="$EXT_ID" perl -i -pe 's|REPLACE_WITH_EXTENSION_ID|$ENV{EXT_ID}|' "$CONSTANTS"
+PUBKEY_B64="$PUBKEY_B64" perl -i -pe 's|("key"\s*:\s*")[^"]*(")|$1$ENV{PUBKEY_B64}$2|' "$MANIFEST"
+EXT_ID="$EXT_ID" perl -i -pe 's|(extensionID\s*=\s*")[^"]*(")|$1$ENV{EXT_ID}$2|' "$CONSTANTS"
 
 cat >&2 <<EOF
 Generated $KEY_PEM (git-ignored — back it up to 1Password / offline storage).
