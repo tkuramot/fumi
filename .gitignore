@@ -33,3 +33,9 @@ go.work.sum
 
 # direnv
 .direnv/
+
+# Build output
+/bin/
+
+# Local dev state (extension signing key, derived IDs)
+/.dev/
