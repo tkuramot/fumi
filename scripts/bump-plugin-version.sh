@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
-# Bump the fumi plugin version by patch/minor/major based on the latest
-# skills-v* git tag, write the new value into
-# plugins/fumi/.claude-plugin/plugin.json, and print the new version
-# (without the "skills-v" prefix). Does not commit or tag.
+# Bump the fumi plugin version by patch/minor/major based on the current
+# value in plugins/fumi/.claude-plugin/plugin.json, write the new value
+# back into the manifest, and print it. Does not commit.
 set -euo pipefail
 
 bump="${1:-patch}"
 manifest="plugins/fumi/.claude-plugin/plugin.json"
 
-latest_tag=$(git tag --list 'skills-v[0-9]*' --sort=-v:refname | head -n1)
-if [[ -z "$latest_tag" ]]; then
-  current="0.0.0"
-else
-  current="${latest_tag#skills-v}"
+current=$(perl -ne 'print $1 if /"version"\s*:\s*"([^"]+)"/' "$manifest")
+if [[ -z "$current" ]]; then
+  echo "could not read version from $manifest" >&2
+  exit 1
 fi
 
 IFS='.' read -r major minor patch <<<"$current"
