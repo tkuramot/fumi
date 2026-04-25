@@ -128,6 +128,15 @@ Open the extension popup → **Reload actions**, then visit `https://example.com
 | `fumi scripts run <name> [--payload '<json>']` | Invoke a script from the shell for debugging |
 | `fumi uninstall` | Remove the native messaging manifest (the store is preserved) |
 
+## Authoring with Claude Code
+
+This repo ships a Claude Code plugin with skills that scaffold new actions and scripts directly into `~/.config/fumi/`:
+
+- `fumi-action` — create a userscript action with the right frontmatter and `@match` patterns
+- `fumi-script` — create a host script with the stdin payload / stdout result contract wired up
+
+Install the plugin from this repo (see [Claude Code plugin docs](https://docs.claude.com/en/docs/claude-code/plugins)) and invoke a skill by describing what you want, e.g. *"add a fumi action that copies the PR title on GitHub"*.
+
 ## Security model
 
 fumi is designed so a compromised page or extension **cannot reach beyond your own scripts**:
