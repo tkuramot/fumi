@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "fumi",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Bridge browser JS and host-side scripts via Native Messaging.",
   "permissions": ["userScripts", "nativeMessaging", "contextMenus", "storage"],
   "host_permissions": ["<all_urls>"],
