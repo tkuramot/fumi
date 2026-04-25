@@ -4,21 +4,12 @@ Start every investigation with `fumi doctor`. It runs the same checks the extens
 
 ## Extension cannot reach the host
 
-Symptom: `fumi.run` rejects immediately, or the extension console logs:
+`fumi.run` already tells you to run `fumi setup` then `fumi doctor` — do that first; doctor will name the specific failure. The raw Chrome reason is preserved on the error's `reason` field for debugging.
 
-> Specified native messaging host not found.
+Cases doctor cannot fully resolve on its own:
 
-or
-
-> Access to the specified native messaging host is forbidden.
-
-Causes, in order of frequency:
-
-1. **Extension ID mismatch.** The loaded extension's ID does not match the one pinned into the Native Messaging manifest's `allowed_origins`. Compare the ID on `chrome://extensions` with the one in `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.tkrmt.fumi.json`. The committed `"key"` in `chrome-extension/public/manifest.json` should make these match automatically — if they don't, your source tree and binaries are out of sync. Rebuild both and re-run `fumi setup --force`. See [installation.md](./installation.md#3-verify-the-extension-id-matches).
-2. **Manifest missing.** You installed the extension but never ran `fumi setup`. Run it.
-3. **Wrong Chrome channel.** You loaded the extension into Chrome Canary or Chromium, which look in different `NativeMessagingHosts` directories. Only stable Google Chrome is supported today.
-4. **`fumi-host` is not where the manifest says.** Check the `path` field in the manifest and make sure the binary exists and is executable. If you moved the binary, re-run `fumi setup --force` after rebuilding with an updated `main.hostBinaryPath`.
-5. **macOS quarantine.** A binary downloaded from the web may be marked with `com.apple.quarantine`, preventing exec. For a build you compiled yourself this should not happen, but if `fumi doctor` says the host is not executable, check with `xattr ~/path/to/fumi-host` and clear with `xattr -d com.apple.quarantine ~/path/to/fumi-host`.
+- **Wrong Chrome channel.** Only stable Google Chrome is supported. Canary and Chromium look in different `NativeMessagingHosts` directories.
+- **macOS quarantine.** If the host is not executable, clear with `xattr -d com.apple.quarantine ~/path/to/fumi-host`. Self-built binaries shouldn't hit this.
 
 ## `fumi.run` rejects with a specific error code
 
@@ -43,15 +34,9 @@ chmod 700 ~/.config/fumi
 chmod 700 ~/.config/fumi/actions ~/.config/fumi/scripts
 ```
 
-## `configureWorld` error in the service worker
+## Popup says User Scripts API is disabled
 
-Symptom: the extension's service worker logs
-
-> Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'configureWorld')
-
-![configureWorld TypeError in the extension error log](./images/undefined-configureWorld.png)
-
-Cause: **Allow User Scripts** is off on the extension's details page, so `chrome.userScripts` is `undefined`. Toggle it on (see [installation.md](./installation.md#2-load-the-chrome-extension-unpacked)) and reload the extension.
+The popup shows: `User Scripts API is disabled. Open chrome://extensions, find "fumi", enable the "Allow User Scripts" toggle, then reload the extension.` Do exactly that — see [installation.md](./installation.md#2-load-the-chrome-extension-unpacked).
 
 ## An action never injects
 
