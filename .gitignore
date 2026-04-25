@@ -34,6 +34,9 @@ go.work.sum
 # direnv
 .direnv/
 
+# Local dev scratch
+/.dev/
+
 # Build output
 /bin/
 /release-artifacts/
