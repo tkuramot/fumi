@@ -27,9 +27,13 @@ export class FumiHostError extends Error {
 
 export class HostUnreachableError extends Error {
 	readonly fumiCode: LocalErrorCode = "HOST_UNREACHABLE";
+	readonly reason: string;
 	constructor(reason: string) {
-		super(reason);
+		super(
+			"Cannot reach fumi-host. Make sure you've run `fumi setup`, then run `fumi doctor` to diagnose.",
+		);
 		this.name = "HostUnreachableError";
+		this.reason = reason;
 	}
 }
 
