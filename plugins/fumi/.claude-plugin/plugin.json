@@ -1,0 +1,6 @@
+{
+  "name": "fumi",
+  "description": "Authoring skills for the fumi Chrome extension: create userscript actions and host scripts.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/tkuramot/fumi"
+}

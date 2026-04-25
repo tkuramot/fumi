@@ -1,0 +1,13 @@
+{
+  "name": "fumi",
+  "owner": {
+    "name": "tkuramot"
+  },
+  "plugins": [
+    {
+      "name": "fumi",
+      "source": "./plugins/fumi",
+      "description": "Authoring skills for the fumi Chrome extension: create userscript actions and host scripts."
+    }
+  ]
+}
