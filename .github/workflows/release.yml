@@ -1,9 +1,6 @@
 name: release
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       bump:
@@ -48,12 +45,25 @@ jobs:
       # Bump manifest locally only — no commit/push yet, so build failures
       # don't leave a half-bumped main or an orphan tag.
       - name: Bump manifest version (local)
-        if: github.event_name == 'workflow_dispatch'
-        run: ./scripts/bump-version.sh "${{ inputs.bump }}"
+        id: bump
+        run: |
+          version=$(./scripts/bump-version.sh "${{ inputs.bump }}")
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+
+      # Fail fast if the tag already exists, before doing the (expensive) build.
+      - name: Check tag does not already exist
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          if git rev-parse --verify --quiet "refs/tags/v$VERSION" >/dev/null; then
+            echo "tag v$VERSION already exists" >&2
+            exit 1
+          fi
 
       - name: Build and package Chrome extension
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
         run: |
-          VERSION=$(perl -ne 'print $1 if /"version"\s*:\s*"([^"]+)"/' chrome-extension/public/manifest.json)
           pnpm -C chrome-extension install --frozen-lockfile
           pnpm -C chrome-extension build
           mkdir -p release-artifacts
@@ -62,11 +72,11 @@ jobs:
       # Build succeeded — commit the bump and push branch+tag atomically so
       # we never leave the bump commit on main without its tag (or vice versa).
       - name: Commit, tag, and push
-        if: github.event_name == 'workflow_dispatch'
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          VERSION=$(perl -ne 'print $1 if /"version"\s*:\s*"([^"]+)"/' chrome-extension/public/manifest.json)
           git add chrome-extension/public/manifest.json
           git commit -m "Release v$VERSION"
           git tag "v$VERSION"
