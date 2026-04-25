@@ -5,9 +5,22 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/urfave/cli/v2"
 )
+
+var version string
+
+func resolveVersion() string {
+	if version != "" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return "dev"
+}
 
 // Exit code convention (see docs/design/cli.md §5):
 //   0 — success
@@ -23,8 +36,9 @@ const (
 
 func main() {
 	app := &cli.App{
-		Name:  "fumi",
-		Usage: "Browser × host machine integration utility",
+		Name:    "fumi",
+		Usage:   "Browser × host machine integration utility",
+		Version: resolveVersion(),
 		Commands: []*cli.Command{
 			setupCmd(),
 			uninstallCmd(),

@@ -20,6 +20,7 @@ builds:
     ldflags:
       - -s -w
       - -X main.hostBinaryPath=/opt/homebrew/bin/fumi-host
+      - -X main.version={{ .Version }}
 
   - id: fumi-host
     main: ./cmd/fumi-host
@@ -33,6 +34,7 @@ builds:
       - arm64
     ldflags:
       - -s -w
+      - -X main.version={{ .Version }}
 
 archives:
   - id: fumi
