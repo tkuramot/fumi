@@ -20,12 +20,24 @@ async function getPrelude(): Promise<string> {
 
 export async function syncActions(): Promise<void> {
 	try {
+		assertUserScriptsAvailable();
 		const { actions } = await call("actions/list");
 		await replaceRegisteredScripts(actions);
 		await setLastActions(actions);
 		await setStatus({ ok: true, count: actions.length, at: Date.now() });
 	} catch (e) {
 		await setStatus({ ok: false, error: errorMessage(e), at: Date.now() });
+	}
+}
+
+// chrome.userScripts is undefined until the user enables the per-extension
+// "Allow User Scripts" toggle. Surface that as an actionable message instead
+// of a raw TypeError.
+function assertUserScriptsAvailable(): void {
+	if (typeof chrome.userScripts === "undefined") {
+		throw new Error(
+			'User Scripts API is disabled. Open chrome://extensions, find "fumi", and enable the "Allow User Scripts" toggle. fumi will reload automatically.',
+		);
 	}
 }
 

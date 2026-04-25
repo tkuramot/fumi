@@ -14,7 +14,7 @@ export type UserScriptMessage =
 			};
 	  }
 	| { kind: "contextMenus/remove"; params: { menuItemId: string | number } }
-	| { kind: "resync" };
+	| { kind: "refresh" };
 
 // SW -> User Script dispatch for chrome.contextMenus.onClicked.
 export type CtxDispatchMessage = {

@@ -1,5 +1,5 @@
 // Popup: reads status from chrome.storage.session and offers a manual
-// resync. Intentionally minimal — no framework, no CRUD UI.
+// refresh. Intentionally minimal — no framework, no CRUD UI.
 
 import { getStatus, type Status } from "../shared/storage.js";
 
@@ -66,13 +66,13 @@ async function render(): Promise<void> {
 	}
 }
 
-document.getElementById("resync")?.addEventListener("click", async () => {
-	const btn = document.getElementById("resync") as HTMLButtonElement;
+document.getElementById("refresh")?.addEventListener("click", async () => {
+	const btn = document.getElementById("refresh") as HTMLButtonElement;
 	const original = btn.textContent;
 	btn.disabled = true;
-	btn.textContent = "Refetching…";
+	btn.textContent = "Refreshing…";
 	try {
-		await chrome.runtime.sendMessage({ kind: "resync" });
+		await chrome.runtime.sendMessage({ kind: "refresh" });
 	} finally {
 		btn.disabled = false;
 		btn.textContent = original;
