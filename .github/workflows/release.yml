@@ -28,14 +28,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create tag
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          NEW=$(./scripts/bump-version.sh "${{ inputs.bump }}")
-          git push origin "v$NEW"
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -53,18 +45,32 @@ jobs:
           cache: pnpm
           cache-dependency-path: chrome-extension/pnpm-lock.yaml
 
+      # Bump manifest locally only — no commit/push yet, so build failures
+      # don't leave a half-bumped main or an orphan tag.
+      - name: Bump manifest version (local)
+        if: github.event_name == 'workflow_dispatch'
+        run: ./scripts/bump-version.sh "${{ inputs.bump }}"
+
       - name: Build and package Chrome extension
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
-          fi
+          VERSION=$(perl -ne 'print $1 if /"version"\s*:\s*"([^"]+)"/' chrome-extension/public/manifest.json)
           pnpm -C chrome-extension install --frozen-lockfile
           pnpm -C chrome-extension build
-          MANIFEST=chrome-extension/dist/manifest.json
-          VERSION="$VERSION" perl -i -pe 's|("version"\s*:\s*")[^"]*(")|$1$ENV{VERSION}$2|' "$MANIFEST"
           mkdir -p release-artifacts
           (cd chrome-extension/dist && zip -r "../../release-artifacts/fumi-extension_${VERSION}.zip" .)
+
+      # Build succeeded — commit the bump and push branch+tag atomically so
+      # we never leave the bump commit on main without its tag (or vice versa).
+      - name: Commit, tag, and push
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          VERSION=$(perl -ne 'print $1 if /"version"\s*:\s*"([^"]+)"/' chrome-extension/public/manifest.json)
+          git add chrome-extension/public/manifest.json
+          git commit -m "Release v$VERSION"
+          git tag "v$VERSION"
+          git push --atomic origin "HEAD:${GITHUB_REF_NAME}" "v$VERSION"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
