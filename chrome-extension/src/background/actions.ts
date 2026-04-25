@@ -33,7 +33,7 @@ export async function syncActions(): Promise<void> {
 class UserScriptsDisabledError extends Error {
 	constructor() {
 		super(
-			'User Scripts API is disabled. Open chrome://extensions, find "fumi", and enable the "Allow User Scripts" toggle. fumi will reload automatically.',
+			'User Scripts API is disabled. Open chrome://extensions, find "fumi", enable the "Allow User Scripts" toggle, then reload the extension.',
 		);
 		this.name = "UserScriptsDisabledError";
 	}
