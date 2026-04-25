@@ -11,11 +11,14 @@ import * as us from "./chrome/userScripts.js";
 chrome.runtime.onInstalled.addListener(async () => {
 	// USER_SCRIPT world needs messaging enabled so the prelude's send() works
 	// (Chrome 120+). Without this the User Script's sendMessage silently fails.
-	// chrome.userScripts is undefined until the user enables "Allow User
-	// Scripts" — let syncActions surface that as a popup-visible error
-	// instead of throwing here.
-	if (typeof chrome.userScripts !== "undefined") {
+	// When "Allow User Scripts" is off, chrome.userScripts is either undefined
+	// or a lingering namespace whose methods throw — swallow both shapes here
+	// and let syncActions surface the typed UserScriptsDisabledError to the
+	// popup instead of leaking a raw error into the SW log.
+	try {
 		await us.configureWorld({ messaging: true });
+	} catch {
+		// handled by syncActions below
 	}
 	await syncActions();
 });
