@@ -135,7 +135,16 @@ This repo ships a Claude Code plugin with skills that scaffold new actions and s
 - `fumi-action` — create a userscript action with the right frontmatter and `@match` patterns
 - `fumi-script` — create a host script with the stdin payload / stdout result contract wired up
 
-Install the plugin from this repo (see [Claude Code plugin docs](https://docs.claude.com/en/docs/claude-code/plugins)) and invoke a skill by describing what you want, e.g. *"add a fumi action that copies the PR title on GitHub"*.
+Install from within Claude Code:
+
+```
+/plugin marketplace add tkuramot/fumi
+/plugin install fumi@fumi
+```
+
+The first command registers this repo as a plugin marketplace; the second installs the `fumi` plugin from it. See the [Claude Code plugin docs](https://docs.claude.com/en/docs/claude-code/plugins) for details.
+
+Once installed, invoke a skill by describing what you want, e.g. *"add a fumi action that copies the PR title on GitHub"*.
 
 ## Security model
 
