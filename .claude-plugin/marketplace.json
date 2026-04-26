@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "fumi",
-      "source": "./plugins/fumi",
+      "source": ".",
       "description": "Authoring skills for the fumi Chrome extension: create userscript actions and host scripts."
     }
   ]

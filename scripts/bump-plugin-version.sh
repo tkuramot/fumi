@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Bump the fumi plugin version by patch/minor/major based on the current
-# value in plugins/fumi/.claude-plugin/plugin.json, write the new value
-# back into the manifest, and print it. Does not commit.
+# value in .claude-plugin/plugin.json, write the new value back into the
+# manifest, and print it. Does not commit.
 set -euo pipefail
 
 bump="${1:-patch}"
-manifest="plugins/fumi/.claude-plugin/plugin.json"
+manifest=".claude-plugin/plugin.json"
 
 current=$(perl -ne 'print $1 if /"version"\s*:\s*"([^"]+)"/' "$manifest")
 if [[ -z "$current" ]]; then
