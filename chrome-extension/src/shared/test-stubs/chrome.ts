@@ -28,7 +28,7 @@ export type UserScriptsStub = {
 
 export type ContextMenusStub = {
 	create: (props: unknown, cb?: () => void) => void;
-	remove: (id: string | number) => Promise<void>;
+	remove: (id: string | number, cb?: () => void) => void;
 	onClicked: { addListener: (fn: AnyFn) => void };
 };
 
