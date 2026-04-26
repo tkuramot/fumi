@@ -2,6 +2,8 @@
 // Each factory helper returns a partial chrome object; tests compose them as
 // needed and assign the result to globalThis.chrome.
 
+import type { TestContext } from "node:test";
+
 type AnyFn = (...args: unknown[]) => unknown;
 
 export type RuntimeStub = {
@@ -74,4 +76,24 @@ export function installChromeStub(stub: ChromeStub): void {
 
 export function clearChromeStub(): void {
 	delete (globalThis as unknown as { chrome?: unknown }).chrome;
+}
+
+// Installs the stub and registers cleanup on the test context, so individual
+// tests don't need try/finally blocks around their bodies.
+export function installChrome(t: TestContext, stub: ChromeStub): void {
+	installChromeStub(stub);
+	t.after(clearChromeStub);
+}
+
+// Stubs globalThis.fetch with a function that returns `{ text: async () => body }`,
+// and restores the original fetch after the test completes.
+export function stubFetch(t: TestContext, body = ""): void {
+	const original = globalThis.fetch;
+	(globalThis as unknown as { fetch: typeof fetch }).fetch = (async () => ({
+		text: async () => body,
+	})) as unknown as typeof fetch;
+	t.after(() => {
+		(globalThis as unknown as { fetch: typeof fetch | undefined }).fetch =
+			original;
+	});
 }

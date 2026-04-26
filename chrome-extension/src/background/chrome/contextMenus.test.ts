@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-	clearChromeStub,
-	installChromeStub,
+	installChrome,
 	makeChromeStub,
 } from "../../shared/test-stubs/chrome.js";
 import { create, remove } from "./contextMenus.js";
 
-test("create() resolves when chrome reports no lastError", async () => {
+test("create() resolves when chrome reports no lastError", async (t) => {
 	let captured: unknown;
-	installChromeStub(
+	installChrome(
+		t,
 		makeChromeStub({
 			runtime: {},
 			contextMenus: {
@@ -20,16 +20,14 @@ test("create() resolves when chrome reports no lastError", async () => {
 			},
 		}),
 	);
-	try {
-		await create({ id: "x", title: "X" });
-		assert.deepEqual(captured, { id: "x", title: "X" });
-	} finally {
-		clearChromeStub();
-	}
+
+	await create({ id: "x", title: "X" });
+	assert.deepEqual(captured, { id: "x", title: "X" });
 });
 
-test("create() rejects with lastError message", async () => {
-	installChromeStub(
+test("create() rejects with lastError message", async (t) => {
+	installChrome(
+		t,
 		makeChromeStub({
 			runtime: { lastError: { message: "duplicate id" } },
 			contextMenus: {
@@ -39,16 +37,14 @@ test("create() rejects with lastError message", async () => {
 			},
 		}),
 	);
-	try {
-		await assert.rejects(() => create({ id: "x", title: "X" }), /duplicate id/);
-	} finally {
-		clearChromeStub();
-	}
+
+	await assert.rejects(() => create({ id: "x", title: "X" }), /duplicate id/);
 });
 
-test("remove() resolves when chrome reports no lastError", async () => {
+test("remove() resolves when chrome reports no lastError", async (t) => {
 	let removedId: string | number | undefined;
-	installChromeStub(
+	installChrome(
+		t,
 		makeChromeStub({
 			runtime: {},
 			contextMenus: {
@@ -59,16 +55,14 @@ test("remove() resolves when chrome reports no lastError", async () => {
 			},
 		}),
 	);
-	try {
-		await remove("y");
-		assert.equal(removedId, "y");
-	} finally {
-		clearChromeStub();
-	}
+
+	await remove("y");
+	assert.equal(removedId, "y");
 });
 
-test("remove() rejects with lastError message", async () => {
-	installChromeStub(
+test("remove() rejects with lastError message", async (t) => {
+	installChrome(
+		t,
 		makeChromeStub({
 			runtime: { lastError: { message: "no such menu" } },
 			contextMenus: {
@@ -78,9 +72,6 @@ test("remove() rejects with lastError message", async () => {
 			},
 		}),
 	);
-	try {
-		await assert.rejects(() => remove("y"), /no such menu/);
-	} finally {
-		clearChromeStub();
-	}
+
+	await assert.rejects(() => remove("y"), /no such menu/);
 });
