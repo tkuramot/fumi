@@ -4,7 +4,6 @@
 
 import type { UserScriptMessage } from "../shared/messages.js";
 import { syncActions } from "./actions.js";
-import * as cm from "./chrome/contextMenus.js";
 import { call } from "./chrome/nativeMessaging.js";
 import * as us from "./chrome/userScripts.js";
 
@@ -54,39 +53,12 @@ const userScriptListener = (
 chrome.runtime.onUserScriptMessage.addListener(userScriptListener);
 chrome.runtime.onMessage.addListener(userScriptListener);
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-	if (!tab?.id) return;
-	chrome.tabs.sendMessage(tab.id, {
-		kind: "ctxDispatch",
-		menuId: info.menuItemId,
-		info,
-		tab,
-	});
-});
-
 async function routeUserScriptMessage(
 	msg: UserScriptMessage,
 ): Promise<unknown> {
 	switch (msg.kind) {
 		case "scripts/run":
 			return call("scripts/run", msg.params);
-
-		case "contextMenus/create": {
-			// Thin handler: fill defaults, delegate to the chrome wrapper.
-			// Duplicate-id semantics are identical to chrome.contextMenus.create
-			// (it rejects). Actions that want idempotency use remove -> create.
-			const p = msg.params;
-			await cm.create({
-				id: p.id,
-				title: p.title,
-				contexts: p.contexts ?? ["page"],
-			});
-			return undefined;
-		}
-
-		case "contextMenus/remove":
-			await cm.remove(msg.params.menuItemId);
-			return undefined;
 
 		case "refresh":
 			await syncActions();

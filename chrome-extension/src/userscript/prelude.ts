@@ -36,27 +36,6 @@
 			});
 		});
 
-	type CtxHandler = (
-		info: chrome.contextMenus.OnClickData,
-		tab?: chrome.tabs.Tab,
-	) => void;
-
-	const ctxHandlers = new Map<string | number, CtxHandler>();
-
-	chrome.runtime.onMessage.addListener((msg: unknown) => {
-		const m = msg as
-			| {
-					kind?: string;
-					menuId?: string | number;
-					info?: chrome.contextMenus.OnClickData;
-					tab?: chrome.tabs.Tab;
-			  }
-			| undefined;
-		if (m?.kind === "ctxDispatch" && m.menuId !== undefined && m.info) {
-			ctxHandlers.get(m.menuId)?.(m.info, m.tab);
-		}
-	});
-
 	(globalThis as unknown as { fumi: unknown }).fumi = {
 		run: (
 			scriptPath: string,
@@ -68,27 +47,5 @@
 				payload,
 				...(opts ?? {}),
 			}),
-
-		contextMenus: {
-			// Mirrors chrome.contextMenus.create. Duplicate-id behavior matches
-			// chrome.* — callers use remove -> create for idempotency.
-			create: (props: {
-				id: string;
-				title: string;
-				contexts?: chrome.contextMenus.ContextType[];
-				onClicked: CtxHandler;
-			}) => {
-				ctxHandlers.set(props.id, props.onClicked);
-				return send("contextMenus/create", {
-					id: props.id,
-					title: props.title,
-					contexts: props.contexts,
-				});
-			},
-			remove: (menuItemId: string | number) => {
-				ctxHandlers.delete(menuItemId);
-				return send("contextMenus/remove", { menuItemId });
-			},
-		},
 	};
 })();

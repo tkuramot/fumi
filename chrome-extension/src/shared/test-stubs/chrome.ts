@@ -28,12 +28,6 @@ export type UserScriptsStub = {
 	unregister: (filter: { ids: string[] }) => Promise<void>;
 };
 
-export type ContextMenusStub = {
-	create: (props: unknown, cb?: () => void) => void;
-	remove: (id: string | number, cb?: () => void) => void;
-	onClicked: { addListener: (fn: AnyFn) => void };
-};
-
 export type StorageAreaStub = {
 	get: (key: string | string[]) => Promise<Record<string, unknown>>;
 	set: (items: Record<string, unknown>) => Promise<void>;
@@ -42,13 +36,9 @@ export type StorageAreaStub = {
 export type ChromeStub = {
 	runtime: Partial<RuntimeStub>;
 	userScripts?: Partial<UserScriptsStub>;
-	contextMenus?: Partial<ContextMenusStub>;
 	storage?: {
 		session?: Partial<StorageAreaStub>;
 		local?: Partial<StorageAreaStub>;
-	};
-	tabs?: {
-		sendMessage: (tabId: number, msg: unknown) => void;
 	};
 };
 
