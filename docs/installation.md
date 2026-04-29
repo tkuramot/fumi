@@ -38,7 +38,7 @@ Place `fumi` and `fumi-host` somewhere on your `PATH`. The path to `fumi-host` i
 
 ### Build-time variables
 
-The extension ID is baked in from `cmd/fumi/constants.go` (`extensionID`, committed) and derived from the `"key"` field in `chrome-extension/public/manifest.json`. Both are written by `./scripts/gen-release-key.sh` once per project and committed — so dev, unpacked, and Chrome Web Store installs all share the same ID. No per-build override is needed.
+The extension ID is baked into `cmd/fumi/constants.go` (`extensionID`, committed). It is the Chrome Web Store-assigned ID. For unpacked dev installs Chrome generates a different, path-dependent ID — copy that ID from `chrome://extensions` into `extensionID` and rebuild before running `fumi setup --force`.
 
 Only one value is overridden at release time via `-ldflags`:
 
@@ -78,9 +78,7 @@ Useful flags:
 
 ### 3. Verify the extension ID matches
 
-The Native Messaging manifest's `allowed_origins` must contain your loaded extension's exact ID, or Chrome will refuse to connect to the host. Because the `"key"` committed in `chrome-extension/public/manifest.json` deterministically derives the ID, the value Chrome shows on `chrome://extensions` should match the one baked into `fumi` — run `fumi doctor` and confirm no `allowed_origins` mismatch is reported.
-
-If you are forking and want your own ID, run `./scripts/gen-release-key.sh` once and commit the patched files; see Chrome's [extension key documentation](https://developer.chrome.com/docs/extensions/reference/manifest/key) for background.
+The Native Messaging manifest's `allowed_origins` must contain your loaded extension's exact ID, or Chrome will refuse to connect to the host. Compare the ID Chrome shows on `chrome://extensions` against `extensionID` in `cmd/fumi/constants.go` — if they differ, update the constant, rebuild `fumi`, and run `fumi setup --force`. `fumi doctor` reports any `allowed_origins` mismatch.
 
 ### 4. Verify
 
@@ -129,5 +127,5 @@ Then remove the extension from `chrome://extensions`.
 ## Known limitations
 
 - Only the default Chrome install is detected. Chrome Canary, Chromium, Chrome Beta, and Chrome Dev each use their own NativeMessagingHosts directory and are not currently supported.
-- One extension ID is pinned per build (via the committed manifest `"key"`). Loading the extension into multiple Chrome profiles is fine — they all derive the same ID — but loading a differently-keyed build alongside it will not work.
+- One extension ID is pinned per build (via `extensionID` in `cmd/fumi/constants.go`). Loading a build with a different ID alongside it will not work — only one origin is in `allowed_origins`.
 - Firefox, Edge, Safari, Linux, and Windows are not supported.

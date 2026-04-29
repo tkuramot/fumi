@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Build fumi, fumi-host, and the Chrome extension wired together for local
-# unpacked development. The extension ID is derived from the "key" committed
-# in chrome-extension/public/manifest.json, so dev and release share a single
-# identity — no local keygen needed.
+# unpacked development. After loading the unpacked extension, copy the
+# Extension ID from chrome://extensions into cmd/fumi/constants.go and
+# rebuild so the Native Messaging manifest's allowed_origins matches.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

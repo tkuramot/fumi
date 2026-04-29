@@ -41,6 +41,3 @@ go.work.sum
 /bin/
 /release-artifacts/
 /dist/
-
-# Release-time extension signing key (public values committed; private PEM is not).
-/release-key.pem

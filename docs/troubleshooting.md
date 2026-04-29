@@ -62,10 +62,7 @@ The parser is strict. Common causes:
 
 ## `fumi doctor` says `allowed_origins` mismatch
 
-The manifest was generated against a different extension ID than the one currently loaded. Either:
-
-- Rebuild `fumi` with the current ID and `fumi setup --force`, or
-- Stabilize the extension ID by setting `"key"` in `chrome-extension/public/manifest.json` before building — then the ID is the same across reloads and profiles.
+The manifest was generated against a different extension ID than the one currently loaded. Update `extensionID` in `cmd/fumi/constants.go` to the ID shown on `chrome://extensions`, rebuild `fumi`, then run `fumi setup --force`.
 
 ## Nothing works after upgrading
 

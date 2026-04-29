@@ -15,7 +15,7 @@ fumi lets web pages trigger local executables. That is an intentionally dangerou
 - **The host machine already being compromised.** If an attacker can write to `~/.config/fumi/scripts/`, they can run anything you can run. fumi assumes the filesystem is trustworthy.
 - **Scripts you write yourself.** fumi will happily execute `rm -rf ~` if you put it in a script. Treat every script as code you own and audit.
 - **Payload-level attacks.** If your script parses the payload carelessly (shell interpolation, SQL concatenation, arbitrary code execution), fumi cannot help. Treat payloads as untrusted input.
-- **A compromised Chrome profile or extension signing key.** If the attacker controls the pinned extension ID, they can call the host. Protect the extension's `"key"` accordingly.
+- **A compromised Chrome profile or extension signing key.** If the attacker controls the pinned extension ID, they can call the host. Protect your Chrome Web Store developer account accordingly.
 
 ## Host surface
 
@@ -64,7 +64,7 @@ These are hard limits enforced in the host. A runaway script is killed; a flood 
 
 ## Origin pinning
 
-The Native Messaging manifest's `allowed_origins` list contains exactly one ID, compiled into the `fumi` binary at build time. Because the extension's `"key"` is committed, the Chrome Web Store build and local unpacked builds share the same extension ID, so a single pinned origin covers both.
+The Native Messaging manifest's `allowed_origins` list contains exactly one ID, compiled into the `fumi` binary at build time from `extensionID` in `cmd/fumi/constants.go`. Because Chrome assigns unpacked installs a different ID than the Chrome Web Store build, only one of those origins is pinned at a time — switching between dev and CWS builds requires updating the constant and re-running `fumi setup --force`.
 
 Any other extension that tries to open a port to `com.tkrmt.fumi` is rejected by Chrome before `fumi-host` is even spawned. Changing the pinned ID requires rebuilding `fumi` and re-running `fumi setup --force`.
 

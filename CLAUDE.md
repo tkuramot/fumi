@@ -30,7 +30,7 @@ Run one extension test: `pnpm exec tsc -p tsconfig.json && node --test dist/back
 
 There are currently no Go tests in the repo; `go test ./...` is a no-op but fine to run.
 
-The extension ID is derived from the `"key"` field in `chrome-extension/public/manifest.json` and the `extensionID` constant in `cmd/fumi/constants.go`; both are committed and written by `./scripts/gen-release-key.sh` (one-time). Release builds only override `-X main.hostBinaryPath=...` via goreleaser ldflags.
+The pinned extension ID lives in `cmd/fumi/constants.go` (`extensionID`). It is the Chrome Web Store-assigned ID and must be updated there after the first CWS publish (and re-run `fumi setup --force`). Release builds only override `-X main.hostBinaryPath=...` via goreleaser ldflags.
 
 ## Architecture
 
