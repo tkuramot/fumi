@@ -1,11 +1,11 @@
 # Installation
 
-fumi is macOS-only and targets Google Chrome. It is distributed as two Go binaries (`fumi`, `fumi-host`) plus an unpacked Chrome extension. The Chrome Web Store listing is still planned; until it lands, the extension has to be loaded unpacked, but the binaries and the extension bundle are both published by the release workflow — you don't need to build from source.
+fumi is macOS-only and targets Google Chrome. It is distributed as two Go binaries (`fumi`, `fumi-host`) installed via Homebrew, plus a Chrome extension installed from the Chrome Web Store.
 
 ## Requirements
 
 - macOS (Darwin). The CLI refuses to run on other platforms.
-- Google Chrome with **Developer mode** enabled. fumi uses `chrome.userScripts`, which Chrome gates behind this flag.
+- Google Chrome. fumi uses `chrome.userScripts`, which is gated behind the **Allow User Scripts** toggle on the extension's details page (see step 2 below).
 - Go 1.26+ and Node.js 22+ (with pnpm) — **only if building from source**.
 
 ## Get the binaries
@@ -38,7 +38,7 @@ Place `fumi` and `fumi-host` somewhere on your `PATH`. The path to `fumi-host` i
 
 ### Build-time variables
 
-The extension ID is baked into `cmd/fumi/constants.go` (`extensionID`, committed). It is the Chrome Web Store-assigned ID. For unpacked dev installs Chrome generates a different, path-dependent ID — copy that ID from `chrome://extensions` into `extensionID` and rebuild before running `fumi setup --force`.
+The extension ID is baked into `cmd/fumi/constants.go` (`extensionID`, committed) — the Chrome Web Store-assigned ID. Unpacked dev builds resolve to the same ID via `scripts/inject-dev-key.mjs` (run automatically by `scripts/build-dev.sh`), which patches a fixed public `key` into `dist/manifest.json`. There is no need to update the constant for local development.
 
 Only one value is overridden at release time via `-ldflags`:
 
@@ -66,21 +66,19 @@ Useful flags:
 
 `fumi setup` does **not** create sample actions or scripts.
 
-### 2. Load the Chrome extension (unpacked)
+### 2. Install the Chrome extension
 
-1. Download `fumi-extension_<version>.zip` from the latest [GitHub release](https://github.com/tkuramot/fumi/releases) and unzip it to a stable location (Chrome reads the extension from this directory on every launch, so don't delete it). If you built from source, use `chrome-extension/dist` instead.
-2. Open `chrome://extensions` and enable **Developer mode**.
-3. Click **Load unpacked** and select the unzipped directory.
-4. Copy the **Extension ID** shown on the card.
-5. Open the extension's **Details** page and toggle **Allow User Scripts** on. fumi uses `chrome.userScripts`, which Chrome keeps disabled by default even with Developer mode enabled; without this toggle the service worker crashes on startup (see [troubleshooting.md](./troubleshooting.md#configureworld-error-in-the-service-worker)).
+#### Option A: Chrome Web Store (recommended)
 
-   ![Allow User Scripts toggle on the extension details page](./images/allow-user-scripts.png)
+Install fumi from the [Chrome Web Store listing](https://chromewebstore.google.com/detail/fumi/dcefklfhoacdcnhpmbfefdljlfeefebp). After installation, open the extension's **Details** page and toggle **Allow User Scripts** on. fumi uses `chrome.userScripts`, which Chrome keeps disabled by default; without this toggle the service worker crashes on startup (see [troubleshooting.md](./troubleshooting.md#configureworld-error-in-the-service-worker)).
 
-### 3. Verify the extension ID matches
+![Allow User Scripts toggle on the extension details page](./images/allow-user-scripts.png)
 
-The Native Messaging manifest's `allowed_origins` must contain your loaded extension's exact ID, or Chrome will refuse to connect to the host. Compare the ID Chrome shows on `chrome://extensions` against `extensionID` in `cmd/fumi/constants.go` — if they differ, update the constant, rebuild `fumi`, and run `fumi setup --force`. `fumi doctor` reports any `allowed_origins` mismatch.
+#### Option B: Unpacked (development)
 
-### 4. Verify
+For working on fumi itself, run `scripts/build-dev.sh` then load `chrome-extension/dist/` as an unpacked extension at `chrome://extensions` with **Developer mode** enabled. The dev-key injection ensures the unpacked install resolves to the same ID as the Chrome Web Store build, so `allowed_origins` matches without rebuilding `fumi`. Toggle **Allow User Scripts** on as above.
+
+### 3. Verify
 
 ```bash
 fumi doctor
@@ -90,13 +88,13 @@ All rows should be `[OK]`. See [troubleshooting.md](./troubleshooting.md) if any
 
 ## Updating
 
-### Homebrew
+### Homebrew + Chrome Web Store
 
 ```bash
 brew upgrade --cask tkuramot/tap/fumi
 ```
 
-Then download the matching `fumi-extension_<version>.zip` from the latest [GitHub release](https://github.com/tkuramot/fumi/releases), replace the files in your previously-unzipped extension directory, and click **Reload** on the extension card in `chrome://extensions`. Keep the binary and extension versions in sync — the Native Messaging protocol isn't versioned, so mixing a newer extension with an older host (or vice versa) is not supported.
+Chrome auto-updates the extension from the Web Store within a few hours; to update immediately, click **Update** on `chrome://extensions` with **Developer mode** enabled. Keep the binary and extension versions reasonably in sync — the Native Messaging protocol isn't versioned, so mixing a much newer extension with an older host (or vice versa) is not supported.
 
 ### From source
 
@@ -127,5 +125,5 @@ Then remove the extension from `chrome://extensions`.
 ## Known limitations
 
 - Only the default Chrome install is detected. Chrome Canary, Chromium, Chrome Beta, and Chrome Dev each use their own NativeMessagingHosts directory and are not currently supported.
-- One extension ID is pinned per build (via `extensionID` in `cmd/fumi/constants.go`). Loading a build with a different ID alongside it will not work — only one origin is in `allowed_origins`.
+- One extension ID is pinned per build (via `extensionID` in `cmd/fumi/constants.go`). Loading a build with a different ID alongside it will not work — only one origin is in `allowed_origins`. The dev-key injection in `scripts/build-dev.sh` keeps unpacked builds on the same ID as the Chrome Web Store build.
 - Firefox, Edge, Safari, Linux, and Windows are not supported.

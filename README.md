@@ -46,7 +46,7 @@ document.addEventListener('keydown', async (e) => {
 ## Requirements
 
 - macOS (Linux / Windows not supported)
-- Google Chrome with **Developer mode** enabled (required for `chrome.userScripts`)
+- Google Chrome — fumi requires the **Allow User Scripts** toggle enabled on its details page (`chrome.userScripts`)
 - Go 1.26+ and Node.js 22+ (for building from source)
 
 ### Distribution
@@ -54,10 +54,10 @@ document.addEventListener('keydown', async (e) => {
 | Channel | Status |
 |---|---|
 | Homebrew tap (`brew install --cask tkuramot/tap/fumi`) | available |
+| [Chrome Web Store listing](https://chromewebstore.google.com/detail/fumi/dcefklfhoacdcnhpmbfefdljlfeefebp) | available |
 | GitHub Releases (binaries + extension zip) | available |
-| Chrome Web Store listing | *TBD* |
 
-The extension still has to be loaded unpacked until the Chrome Web Store listing lands, but you no longer need to build the Go binaries or the extension yourself — download the pre-built zip from the latest [GitHub release](https://github.com/tkuramot/fumi/releases).
+Install the extension from the Chrome Web Store and the binaries via Homebrew — no need to build from source.
 
 ## Quick start
 
@@ -77,11 +77,9 @@ fumi setup
 
 This places the Native Messaging manifest, creates `~/.config/fumi/{actions,scripts}/` (mode 0700), and drops in a couple of samples.
 
-### 3. Load the Chrome extension (unpacked)
+### 3. Install the Chrome extension
 
-1. Download `fumi-extension_<version>.zip` from the latest [GitHub release](https://github.com/tkuramot/fumi/releases) and unzip it (or use `chrome-extension/dist` if you built from source).
-2. Visit `chrome://extensions` and enable **Developer mode**.
-3. Click **Load unpacked** and select the unzipped directory.
+Install from the [Chrome Web Store listing](https://chromewebstore.google.com/detail/fumi/dcefklfhoacdcnhpmbfefdljlfeefebp). After installing, open the extension's **Details** page and toggle **Allow User Scripts** on — fumi uses `chrome.userScripts`, which Chrome keeps disabled by default.
 
 ### 4. Verify
 

@@ -64,7 +64,7 @@ These are hard limits enforced in the host. A runaway script is killed; a flood 
 
 ## Origin pinning
 
-The Native Messaging manifest's `allowed_origins` list contains exactly one ID, compiled into the `fumi` binary at build time from `extensionID` in `cmd/fumi/constants.go`. Because Chrome assigns unpacked installs a different ID than the Chrome Web Store build, only one of those origins is pinned at a time — switching between dev and CWS builds requires updating the constant and re-running `fumi setup --force`.
+The Native Messaging manifest's `allowed_origins` list contains exactly one ID, compiled into the `fumi` binary at build time from `extensionID` in `cmd/fumi/constants.go`. Both the Chrome Web Store build and unpacked dev builds (via the dev-key injection in `scripts/build-dev.sh`) resolve to that same ID, so a single pin covers both.
 
 Any other extension that tries to open a port to `com.tkrmt.fumi` is rejected by Chrome before `fumi-host` is even spawned. Changing the pinned ID requires rebuilding `fumi` and re-running `fumi setup --force`.
 

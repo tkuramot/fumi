@@ -62,7 +62,7 @@ The parser is strict. Common causes:
 
 ## `fumi doctor` says `allowed_origins` mismatch
 
-The manifest was generated against a different extension ID than the one currently loaded. Update `extensionID` in `cmd/fumi/constants.go` to the ID shown on `chrome://extensions`, rebuild `fumi`, then run `fumi setup --force`.
+The manifest was generated against a different extension ID than the one currently loaded. The Chrome Web Store build and `scripts/build-dev.sh` (via dev-key injection) both resolve to the ID baked into `cmd/fumi/constants.go`, so this should not happen for normal installs — usually it means an older `fumi` binary is on `PATH`. Reinstall via Homebrew (or `go build` from the current source) and run `fumi setup --force`.
 
 ## Nothing works after upgrading
 
