@@ -7,24 +7,39 @@ import { syncActions } from "./actions.js";
 import { call } from "./chrome/nativeMessaging.js";
 import * as us from "./chrome/userScripts.js";
 
-chrome.runtime.onInstalled.addListener(async () => {
-	// USER_SCRIPT world needs messaging enabled so the prelude's send() works
-	// (Chrome 120+). Without this the User Script's sendMessage silently fails.
-	// When "Allow User Scripts" is off, chrome.userScripts is either undefined
-	// or a lingering namespace whose methods throw — swallow both shapes here
-	// and let syncActions surface the typed UserScriptsDisabledError to the
-	// popup instead of leaking a raw error into the SW log.
+// USER_SCRIPT world needs messaging enabled so the prelude's send() works
+// (Chrome 120+). Without this the User Script's sendMessage silently fails.
+// configureWorld state is not durable: it resets on Chrome restart, extension
+// update, and "Allow User Scripts" toggle changes, and MV3 service workers are
+// torn down when idle — so this must run on every SW startup, not just on
+// install. The call is idempotent, so repeating it is harmless.
+//
+// When "Allow User Scripts" is off, chrome.userScripts is either undefined or
+// a lingering namespace whose methods throw — swallow both shapes here and let
+// syncActions surface the typed UserScriptsDisabledError to the popup instead
+// of leaking a raw error into the SW log.
+async function ensureWorldConfigured(): Promise<void> {
 	try {
 		await us.configureWorld({ messaging: true });
 	} catch {
-		// handled by syncActions below
+		// handled by syncActions' assertUserScriptsAvailable
 	}
+}
+
+chrome.runtime.onInstalled.addListener(async () => {
+	await ensureWorldConfigured();
 	await syncActions();
 });
 
-chrome.runtime.onStartup.addListener(() => {
-	void syncActions();
+chrome.runtime.onStartup.addListener(async () => {
+	await ensureWorldConfigured();
+	await syncActions();
 });
+
+// Top-level fallback: MV3 wakes the SW for events (onUserScriptMessage,
+// onMessage) without firing onInstalled/onStartup. Running here on every SW
+// load guarantees messaging is configured before the first message is routed.
+void ensureWorldConfigured();
 
 // Internal router: SW <-> User Script ({kind, params}). Distinct from the
 // JSON-RPC layer used by call() for SW <-> Host.
