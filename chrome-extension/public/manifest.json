@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "fumi",
   "version": "0.1.10",
-  "description": "Run your own scripts on your computer from any web page.",
+  "description": "Bridge the browser and your host machine — write userscripts that invoke local executables.",
   "permissions": ["userScripts", "nativeMessaging", "storage"],
   "host_permissions": ["<all_urls>"],
   "background": {
