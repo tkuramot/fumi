@@ -19,10 +19,11 @@ fumi lets web pages trigger local executables. That is an intentionally dangerou
 
 ## Host surface
 
-`fumi-host` speaks JSON-RPC 2.0 over Chrome's Native Messaging stdio transport. The entire API is two methods:
+`fumi-host` speaks JSON-RPC 2.0 over Chrome's Native Messaging stdio transport. The entire API is three methods:
 
 - `actions/list` — returns parsed frontmatter from `actions/*.js`. Read-only.
 - `scripts/run` — executes a file in `scripts/` with a JSON payload on stdin.
+- `host/version` — returns the host's build version string (the same value as `fumi-host --version`). Read-only metadata; the extension uses it to warn when its version and the host's drift apart.
 
 There is no file read, no file write, no directory list, no environment introspection, no "eval this code", and no way to pass a path or command outside of a `scripts/` entry. Adding one would require a new method, a host rebuild, and a `fumi setup --force`.
 

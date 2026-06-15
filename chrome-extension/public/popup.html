@@ -16,6 +16,9 @@
         --err-bg: #ffebe9;
         --idle-fg: #59636e;
         --idle-bg: #eaeef2;
+        --warn-fg: #7d4e00;
+        --warn-bg: #fff8c5;
+        --warn-border: #d4a72c;
         --btn-bg: #f6f8fa;
         --btn-bg-hover: #eef1f4;
         --btn-border: #d0d7de;
@@ -34,6 +37,9 @@
           --err-bg: #3a1416;
           --idle-fg: #8d96a0;
           --idle-bg: #2a2f37;
+          --warn-fg: #d29922;
+          --warn-bg: #2d2613;
+          --warn-border: #594e1a;
           --btn-bg: #22272e;
           --btn-bg-hover: #2d333b;
           --btn-border: #30363d;
@@ -123,6 +129,24 @@
         background: var(--err-bg);
         color: var(--err-fg);
       }
+      .warn-card {
+        display: none;
+        background: var(--warn-bg);
+        border-color: var(--warn-border);
+        color: var(--warn-fg);
+        font-size: 12px;
+        word-break: break-word;
+      }
+      .warn-card.visible {
+        display: block;
+      }
+      .warn-card code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        background: rgba(127, 127, 127, 0.18);
+        padding: 1px 4px;
+        border-radius: 4px;
+      }
       .error-card {
         display: none;
         background: var(--err-bg);
@@ -182,6 +206,7 @@
     </div>
 
     <div id="error" class="card error-card"></div>
+    <div id="update-warning" class="card warn-card"></div>
 
     <button id="refresh">Refresh actions</button>
     <script type="module" src="popup/popup.js"></script>

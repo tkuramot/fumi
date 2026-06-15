@@ -19,14 +19,35 @@ async function getPrelude(): Promise<string> {
 }
 
 export async function syncActions(): Promise<void> {
+	// Best-effort, up-front so it's recorded even if actions/list fails.
+	const hostVersion = await fetchHostVersion();
+
 	try {
 		await assertUserScriptsAvailable();
 		const { actions } = await call("actions/list");
 		await replaceRegisteredScripts(actions);
 		await setLastActions(actions);
-		await setStatus({ ok: true, count: actions.length, at: Date.now() });
+		await setStatus({
+			ok: true,
+			count: actions.length,
+			at: Date.now(),
+			hostVersion,
+		});
 	} catch (e) {
-		await setStatus({ ok: false, error: errorMessage(e), at: Date.now() });
+		await setStatus({
+			ok: false,
+			error: errorMessage(e),
+			at: Date.now(),
+			hostVersion,
+		});
+	}
+}
+
+async function fetchHostVersion(): Promise<string | undefined> {
+	try {
+		return (await call("host/version")).version;
+	} catch {
+		return undefined;
 	}
 }
 

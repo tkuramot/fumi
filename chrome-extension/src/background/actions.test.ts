@@ -90,8 +90,12 @@ test("syncActions() persists ok status and last actions on success", async (t) =
 	};
 	const fx = installSyncStub(t, {
 		sendNativeMessage: (_host, req, cb) => {
-			const r = req as { id: string };
-			cb({ jsonrpc: "2.0", id: r.id, result: { actions: [action] } });
+			const r = req as { id: string; method: string };
+			const result =
+				r.method === "host/version"
+					? { version: "0.1.9" }
+					: { actions: [action] };
+			cb({ jsonrpc: "2.0", id: r.id, result });
 		},
 	});
 
@@ -100,10 +104,12 @@ test("syncActions() persists ok status and last actions on success", async (t) =
 		ok: boolean;
 		count: number;
 		error?: string;
+		hostVersion?: string;
 	};
 	assert.equal(status.ok, true);
 	assert.equal(status.count, 1);
 	assert.equal(status.error, undefined);
+	assert.equal(status.hostVersion, "0.1.9");
 	assert.deepEqual(fx.storage.local[LAST_ACTIONS_KEY], [action]);
 	assert.equal(fx.captured.registered.length, 1);
 });
@@ -111,7 +117,11 @@ test("syncActions() persists ok status and last actions on success", async (t) =
 test("syncActions() records error status when host rejects", async (t) => {
 	const fx = installSyncStub(t, {
 		sendNativeMessage: (_host, req, cb) => {
-			const r = req as { id: string };
+			const r = req as { id: string; method: string };
+			if (r.method === "host/version") {
+				cb({ jsonrpc: "2.0", id: r.id, result: { version: "0.1.9" } });
+				return;
+			}
 			cb({
 				jsonrpc: "2.0",
 				id: r.id,
@@ -128,17 +138,26 @@ test("syncActions() records error status when host rejects", async (t) => {
 	const status = fx.storage.session[STATUS_KEY] as {
 		ok: boolean;
 		error: string;
+		hostVersion?: string;
 	};
 	assert.equal(status.ok, false);
 	assert.match(status.error, /store missing/);
+	// Recorded even though actions/list failed (fetched up-front).
+	assert.equal(status.hostVersion, "0.1.9");
 	assert.equal(fx.captured.registered.length, 0);
 });
 
 test("syncActions() surfaces UserScriptsDisabledError when getScripts throws", async (t) => {
 	const fx = installSyncStub(t, {
 		getScriptsThrows: true,
-		sendNativeMessage: () => {
-			throw new Error("should not be called");
+		// host/version is fetched first; actions/list must not be reached.
+		sendNativeMessage: (_host, req, cb) => {
+			const r = req as { id: string; method: string };
+			if (r.method === "host/version") {
+				cb({ jsonrpc: "2.0", id: r.id, result: { version: "0.1.9" } });
+				return;
+			}
+			throw new Error("actions/list should not be called");
 		},
 	});
 

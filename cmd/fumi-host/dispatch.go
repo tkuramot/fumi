@@ -96,6 +96,8 @@ func run(stdin io.Reader, stdout, stderr io.Writer) (code int) {
 		result, rpcErr = handleActionsList(paths)
 	case "scripts/run":
 		result, rpcErr = handleScriptsRun(context.Background(), cfg, paths, req.Params)
+	case "host/version":
+		result, rpcErr = handleHostVersion()
 	default:
 		rpcErr = protocol.NewError("PROTO_METHOD_NOT_FOUND",
 			"unknown method: "+req.Method,

@@ -58,3 +58,7 @@ type RunScriptResult struct {
 	Stderr     string `json:"stderr"`
 	DurationMs int64  `json:"durationMs"`
 }
+
+type HostVersionResult struct {
+	Version string `json:"version"`
+}

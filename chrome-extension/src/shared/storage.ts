@@ -8,6 +8,9 @@ export type Status = {
 	count?: number;
 	error?: string;
 	at: number;
+	// Host version (host/version); undefined if unreachable. Drives the
+	// popup's version-skew warning.
+	hostVersion?: string;
 };
 
 export const STATUS_KEY = "status";

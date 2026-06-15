@@ -24,7 +24,17 @@ export type ScriptsRunParams = {
 	timeoutMs?: number;
 };
 
-export type Request = ActionsListRequest | ScriptsRunRequest;
+export type HostVersionRequest = {
+	jsonrpc: "2.0";
+	id: JsonRpcId;
+	method: "host/version";
+	params?: undefined;
+};
+
+export type Request =
+	| ActionsListRequest
+	| ScriptsRunRequest
+	| HostVersionRequest;
 
 export type Action = {
 	id: string;
@@ -43,14 +53,18 @@ export type ScriptsRunResult = {
 	durationMs: number;
 };
 
+export type HostVersionResult = { version: string };
+
 export type MethodResult = {
 	"actions/list": ActionsListResult;
 	"scripts/run": ScriptsRunResult;
+	"host/version": HostVersionResult;
 };
 
 export type MethodParams = {
 	"actions/list": undefined;
 	"scripts/run": ScriptsRunParams;
+	"host/version": undefined;
 };
 
 export type Method = keyof MethodResult;

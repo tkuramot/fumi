@@ -185,6 +185,26 @@ func TestDispatchNotificationProducesNoResponse(t *testing.T) {
 	}
 }
 
+func TestDispatchHostVersion(t *testing.T) {
+	setupStore(t)
+	var stdout, stderr bytes.Buffer
+	body := `{"jsonrpc":"2.0","id":7,"method":"host/version"}`
+	if code := run(frame(t, body), &stdout, &stderr); code != 0 {
+		t.Fatalf("exit = %d", code)
+	}
+	resp := readResp(t, &stdout)
+	if resp.Error != nil {
+		t.Fatalf("unexpected error: %+v", resp.Error)
+	}
+	var got protocol.HostVersionResult
+	if err := json.Unmarshal(resp.Result, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Version == "" {
+		t.Errorf("version is empty")
+	}
+}
+
 func TestDispatchScriptsRunOK(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip()

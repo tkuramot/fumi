@@ -29,11 +29,46 @@ function setStatusBadge(state: "ok" | "err" | "idle", text: string): void {
 	el.className = `badge${state === "idle" ? "" : ` ${state}`}`;
 }
 
+// Strip a leading "v"/whitespace so "0.1.9" and "v0.1.9" compare equal.
+function normalizeVersion(v: string): string {
+	return v.trim().replace(/^v/, "");
+}
+
+// True if versions differ. "dev"/empty host = dev build, never warn.
+function versionsMismatch(ext: string, host: string | undefined): boolean {
+	if (!host) return false;
+	const h = normalizeVersion(host);
+	if (h === "" || h === "dev") return false;
+	return normalizeVersion(ext) !== h;
+}
+
+function renderUpdateWarning(extVersion: string, hostVersion?: string): void {
+	const el = $("update-warning");
+	if (!versionsMismatch(extVersion, hostVersion)) {
+		el.classList.remove("visible");
+		el.textContent = "";
+		return;
+	}
+	el.replaceChildren(
+		document.createTextNode(
+			`Version mismatch — extension v${normalizeVersion(extVersion)}, host v${normalizeVersion(hostVersion ?? "")}. Update the host with `,
+		),
+		Object.assign(document.createElement("code"), {
+			textContent: "brew upgrade --cask fumi",
+		}),
+		document.createTextNode(", then reload the extension."),
+	);
+	el.classList.add("visible");
+}
+
 async function render(): Promise<void> {
-	$("version").textContent = `v${chrome.runtime.getManifest().version}`;
+	const extVersion = chrome.runtime.getManifest().version;
+	$("version").textContent = `v${extVersion}`;
 
 	const status: Status | undefined = await getStatus();
 	const errEl = $("error");
+
+	renderUpdateWarning(extVersion, status?.hostVersion);
 
 	if (!status) {
 		setStatusBadge("idle", "not fetched");
